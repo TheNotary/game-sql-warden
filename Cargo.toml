@@ -8,3 +8,4 @@ edition = "2024"
 [dependencies.rusqlite]
 features = ["bundled", "wasm32-wasi-vfs"]
 version = "0.29.0"
+
