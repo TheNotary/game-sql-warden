@@ -121,3 +121,60 @@ fn get_ret<T>(msg: &str) -> std::result::Result<T, rusqlite::Error> {
         Some(msg.into()),
     ))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rusqlite::Connection;
+
+    #[test]
+    fn test_challenge_not_attempted() {
+        // Setup: Create an in-memory database without the view
+        let conn = Connection::open_in_memory().unwrap();
+
+        // Create some basic table structure if needed
+        conn.execute(
+            "CREATE TABLE monsters (id INTEGER PRIMARY KEY, name TEXT, strength INTEGER)",
+            [],
+        )
+        .unwrap();
+
+        // Test: Should return false when view doesn't exist
+        let result = was_challenge_attempted(&conn).unwrap();
+        assert!(!result);
+    }
+
+    #[test]
+    fn test_challenge_attempted() {
+        // Setup: Create an in-memory database with the view
+        let conn = Connection::open_in_memory().unwrap();
+
+        // Create prerequisite table
+        conn.execute(
+            "CREATE TABLE monsters (id INTEGER PRIMARY KEY, name TEXT, strength INTEGER)",
+            [],
+        )
+        .unwrap();
+
+        // Create the view that indicates challenge was attempted
+        conn.execute(
+            "CREATE VIEW strongest_monsters AS SELECT * FROM monsters ORDER BY strength DESC",
+            [],
+        )
+        .unwrap();
+
+        // Test: Should return true when view exists
+        let result = was_challenge_attempted(&conn).unwrap();
+        assert!(result);
+    }
+
+    #[test]
+    fn test_handles_empty_database() {
+        // Setup: Completely empty database
+        let conn = Connection::open_in_memory().unwrap();
+
+        // Test: Should return false without errors
+        let result = was_challenge_attempted(&conn).unwrap();
+        assert!(!result);
+    }
+}
