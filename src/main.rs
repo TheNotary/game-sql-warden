@@ -1,13 +1,10 @@
 use rusqlite::{Connection, OptionalExtension, Result};
-use std::fs;
 use std::path::Path;
 use std::process::Command;
 
 use crate::{
-    evaluation::{EvaluationResult, EvaluationRow},
-    presenter::print_db_created_note,
-    presenter::print_evaluation,
-    presenter::print_instruction_what_to_do,
+    evaluation::evaluate_users_solution, presenter::print_db_created_note,
+    presenter::print_evaluation, presenter::print_instruction_what_to_do,
 };
 
 mod evaluation;
@@ -87,32 +84,6 @@ fn was_challenge_attempted(conn: &Connection) -> Result<bool> {
     }
 
     get_ret("The SQL was invalid apparently...")
-}
-
-pub fn evaluate_users_solution(conn: &Connection) -> Result<EvaluationResult> {
-    let test_sql = fs::read_to_string(TEST_SQL_PATH).expect("Could not read test.sql");
-
-    let mut stmt = conn.prepare(&test_sql)?;
-    let rows_iter = stmt.query_map([], |row| {
-        Ok(EvaluationRow {
-            cube_id: row.get(0)?,
-            monster_id: row.get(1)?,
-            is_correct: row.get::<_, i64>(2)? == 1,
-        })
-    })?;
-
-    let mut rows = Vec::new();
-    let mut all_correct = true;
-
-    for row in rows_iter {
-        let row = row?;
-        if !row.is_correct {
-            all_correct = false;
-        }
-        rows.push(row);
-    }
-
-    Ok(EvaluationResult { rows, all_correct })
 }
 
 fn get_ret<T>(msg: &str) -> std::result::Result<T, rusqlite::Error> {
