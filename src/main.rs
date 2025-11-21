@@ -1,5 +1,6 @@
 use rusqlite::{Connection, OptionalExtension, Result};
 use std::fs;
+use std::path::Path;
 use std::process::Command;
 
 use crate::{
@@ -17,7 +18,7 @@ pub static MIGRATION_PATH: &str = "migration.sql";
 pub static TEST_SQL_PATH: &str = "test.sql";
 
 fn main() -> Result<()> {
-    let (state, conn) = assess_environment()?;
+    let state = assess_environment()?;
 
     match state {
         ChallengeState::MissingDb => {
@@ -26,41 +27,34 @@ fn main() -> Result<()> {
             print_db_created_note()
         }
         ChallengeState::NotAttempted => print_instruction_what_to_do(),
-        ChallengeState::Attempted => {
-            if let Some(conn) = conn {
-                let report = evaluate_users_solution(&conn)?;
-                conn.close().expect("error closing SQL connection =/");
-                print_evaluation(&report)
-            } else {
-                get_ret("impossible branch?")
-            }
+        ChallengeState::Attempted(conn) => {
+            let report = evaluate_users_solution(&conn)?;
+            print_evaluation(&report)
         }
     }
 }
 
-#[derive(PartialEq)]
 enum ChallengeState {
     MissingDb,
     NotAttempted,
-    Attempted,
+    Attempted(Connection),
 }
 
-fn assess_environment() -> Result<(ChallengeState, Option<Connection>)> {
-    if !std::path::Path::new(DB_PATH).exists() {
-        return Ok((ChallengeState::MissingDb, None));
+fn assess_environment() -> Result<ChallengeState> {
+    if !Path::new(DB_PATH).exists() {
+        return Ok(ChallengeState::MissingDb);
     }
 
     let conn = Connection::open(DB_PATH)?;
-    let attempted = was_challenge_attempted(&conn)?;
 
-    if attempted {
-        return Ok((ChallengeState::Attempted, Some(conn)));
+    if was_challenge_attempted(&conn)? {
+        return Ok(ChallengeState::Attempted(conn));
     }
-    Ok((ChallengeState::NotAttempted, None))
+    Ok(ChallengeState::NotAttempted)
 }
 
 fn create_db() -> Result<()> {
-    if !std::path::Path::new(MIGRATION_PATH).exists() {
+    if !Path::new(MIGRATION_PATH).exists() {
         eprintln!("❌ {MIGRATION_PATH} missing — cannot build {DB_PATH}");
         return get_ret("Migration file missing");
     }
