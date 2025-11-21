@@ -18,16 +18,21 @@ pub static MIGRATION_PATH: &str = "migration.sql";
 pub static TEST_SQL_PATH: &str = "test.sql";
 
 fn main() -> Result<()> {
-    let state = assess_environment()?;
+    // ChallengeState::MissingDb
+    if !Path::new(DB_PATH).exists() {
+        println!("🧱 {DB_PATH} not found — constructing the Cubical Dungeon...");
+        create_db()?;
+        return print_db_created_note();
+    }
+
+    let conn = Connection::open(DB_PATH)?;
+
+    // FIXME: have this capture CORRECT and INCORRECT as well?
+    let state = assess_environment(&conn)?;
 
     match state {
-        ChallengeState::MissingDb => {
-            println!("🧱 {DB_PATH} not found — constructing the Cubical Dungeon...");
-            create_db()?;
-            print_db_created_note()
-        }
         ChallengeState::NotAttempted => print_instruction_what_to_do(),
-        ChallengeState::Attempted(conn) => {
+        ChallengeState::Attempted => {
             let report = evaluate_users_solution(&conn)?;
             print_evaluation(&report)
         }
@@ -35,20 +40,13 @@ fn main() -> Result<()> {
 }
 
 enum ChallengeState {
-    MissingDb,
     NotAttempted,
-    Attempted(Connection),
+    Attempted,
 }
 
-fn assess_environment() -> Result<ChallengeState> {
-    if !Path::new(DB_PATH).exists() {
-        return Ok(ChallengeState::MissingDb);
-    }
-
-    let conn = Connection::open(DB_PATH)?;
-
-    if was_challenge_attempted(&conn)? {
-        return Ok(ChallengeState::Attempted(conn));
+fn assess_environment(conn: &Connection) -> Result<ChallengeState> {
+    if was_challenge_attempted(conn)? {
+        return Ok(ChallengeState::Attempted);
     }
     Ok(ChallengeState::NotAttempted)
 }
