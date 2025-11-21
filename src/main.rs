@@ -16,15 +16,10 @@ pub static DB_PATH: &str = "database.db";
 pub static MIGRATION_PATH: &str = "migration.sql";
 pub static TEST_SQL_PATH: &str = "test.sql";
 
-#[derive(PartialEq)]
-enum ChallengeState {
-    MissingDb,
-    NotAttempted,
-    Attempted,
-}
-
 fn main() -> Result<()> {
-    match assess_environment()? {
+    let (state, conn) = assess_environment()?;
+
+    match state {
         ChallengeState::MissingDb => {
             println!("🧱 {DB_PATH} not found — constructing the Cubical Dungeon...");
             create_db()?;
@@ -32,27 +27,36 @@ fn main() -> Result<()> {
         }
         ChallengeState::NotAttempted => print_instruction_what_to_do(),
         ChallengeState::Attempted => {
-            let conn = Connection::open(DB_PATH)?;
-            let report = evaluate_users_solution(&conn)?;
-            print_evaluation(&report)
+            if let Some(conn) = conn {
+                let report = evaluate_users_solution(&conn)?;
+                conn.close().expect("error closing SQL connection =/");
+                print_evaluation(&report)
+            } else {
+                get_ret("impossible branch?")
+            }
         }
     }
 }
 
-fn assess_environment() -> Result<ChallengeState> {
+#[derive(PartialEq)]
+enum ChallengeState {
+    MissingDb,
+    NotAttempted,
+    Attempted,
+}
+
+fn assess_environment() -> Result<(ChallengeState, Option<Connection>)> {
     if !std::path::Path::new(DB_PATH).exists() {
-        return Ok(ChallengeState::MissingDb);
+        return Ok((ChallengeState::MissingDb, None));
     }
 
     let conn = Connection::open(DB_PATH)?;
-
     let attempted = was_challenge_attempted(&conn)?;
-    conn.close().expect("SQLITE3 closed bad I guess");
 
     if attempted {
-        return Ok(ChallengeState::Attempted);
+        return Ok((ChallengeState::Attempted, Some(conn)));
     }
-    Ok(ChallengeState::NotAttempted)
+    Ok((ChallengeState::NotAttempted, None))
 }
 
 fn create_db() -> Result<()> {
