@@ -6,33 +6,93 @@ static DB_PATH: &str = "database.db";
 static MIGRATION_PATH: &str = "migration.sql";
 static TEST_SQL_PATH: &str = "test.sql";
 
+#[derive(PartialEq)]
+enum ChallengeState {
+    MissingDb,
+    NotAttempted,
+    Attempted,
+}
+
 fn main() -> Result<()> {
-    match administer_challenge() {
-        Ok(_) => Ok(()),
-        Err(rusqlite::Error::SqliteFailure(_, _)) => Ok(()),
-        Err(err) => Err(err),
+    match assess_environment()? {
+        ChallengeState::MissingDb => {
+            println!("🧱 {DB_PATH} not found — constructing the Cubical Dungeon...");
+            create_db()?;
+            print_db_created_note()
+        }
+        ChallengeState::NotAttempted => print_instruction_what_to_do(),
+        ChallengeState::Attempted => {
+            let conn = Connection::open(DB_PATH)?;
+            if let Ok(report) = evaluate_users_solution(&conn) {
+                print_evaluation(&report);
+            }
+            Ok(())
+        }
     }
 }
 
-fn administer_challenge() -> Result<()> {
-    create_db_and_bail_if_missing()?;
+pub fn print_evaluation(result: &EvaluationResult) {
+    println!("🔍 Attempt detected! Evaluating your solution...");
+    println!("\n📊 Test Results:");
+
+    for r in &result.rows {
+        if r.is_correct {
+            println!(" cube {} → monster {} ✔ correct", r.cube_id, r.monster_id);
+        } else {
+            println!(" cube {} → monster {} ✘ incorrect", r.cube_id, r.monster_id);
+        }
+    }
+
+    println!();
+
+    if result.all_correct {
+        println!("🏆 **You have mastered the Cubical Dungeon’s first trial!**");
+    } else {
+        println!("❌ Some answers were incorrect.");
+        println!("The Warden mutters: 'Refine your query, wanderer.'");
+    }
+}
+
+fn print_db_created_note() -> Result<()> {
+    println!("✅ Dungeon constructed! database.db is ready.");
+    println!("To explore the dungeon manually:");
+    println!("  sqlite3 {DB_PATH}");
+    println!("Inside SQLite, view the schema with:");
+    println!("  .schema");
+    Ok(())
+}
+
+fn print_instruction_what_to_do() -> Result<()> {
+    println!("🧙 The Warden whispers: You have not yet attempted the challenge.");
+    println!("The dungeon is ready. Create your solution as:");
+    println!("  CREATE VIEW strongest_monsters AS ... ;");
+    println!("");
+    println!("To inspect the database schema:");
+    println!("  sqlite3 {DB_PATH}");
+    println!("  .schema");
+    Ok(())
+}
+
+fn assess_environment() -> Result<ChallengeState> {
+    if !std::path::Path::new(DB_PATH).exists() {
+        return Ok(ChallengeState::MissingDb);
+    }
 
     let conn = Connection::open(DB_PATH)?;
 
-    check_if_user_attempted_challenge(&conn)?;
-    evaluate_users_solution(&conn)
+    let attempted = was_challenge_attempted(&conn)?;
+    conn.close().expect("SQLITE3 closed bad I guess");
+
+    if attempted {
+        return Ok(ChallengeState::Attempted);
+    }
+    Ok(ChallengeState::NotAttempted)
 }
 
-fn create_db_and_bail_if_missing() -> Result<()> {
-    if std::path::Path::new(DB_PATH).exists() {
-        return Ok(());
-    }
-
-    println!("🧱 {DB_PATH} not found — constructing the Cubical Dungeon...");
-
+fn create_db() -> Result<()> {
     if !std::path::Path::new(MIGRATION_PATH).exists() {
         eprintln!("❌ {MIGRATION_PATH} missing — cannot build {DB_PATH}");
-        std::process::exit(1);
+        return get_ret("Migration file missing");
     }
 
     let status = Command::new("sqlite3")
@@ -43,19 +103,13 @@ fn create_db_and_bail_if_missing() -> Result<()> {
 
     if !status.success() {
         eprintln!("❌ sqlite3 failed to apply migration");
-        std::process::exit(1);
+        return get_ret("sqlite3 failed to apply migration");
     }
 
-    println!("✅ Dungeon constructed! database.db is ready.");
-    println!("To explore the dungeon manually:");
-    println!("  sqlite3 {DB_PATH}");
-    println!("Inside SQLite, view the schema with:");
-    println!("  .schema");
-
-    get_ret("Exiting")
+    return Ok(());
 }
 
-fn check_if_user_attempted_challenge(conn: &Connection) -> Result<()> {
+fn was_challenge_attempted(conn: &Connection) -> Result<bool> {
     let mut stmt = conn.prepare(
         "SELECT name FROM sqlite_master WHERE type='view' AND name='strongest_monsters';",
     )?;
@@ -65,26 +119,15 @@ fn check_if_user_attempted_challenge(conn: &Connection) -> Result<()> {
         .optional()
     {
         match attempt {
-            None => {
-                println!("🧙 The Warden whispers: You have not yet attempted the challenge.");
-                println!("The dungeon is ready. Create your solution as:");
-                println!("  CREATE VIEW strongest_monsters AS ... ;");
-                println!("");
-                println!("To inspect the database schema:");
-                println!("  sqlite3 {DB_PATH}");
-                println!("  .schema");
-
-                get_ret("Exiting")
-            }
-            Some(_) => Ok(()),
+            None => return Ok(false),
+            Some(_) => return Ok(true),
         }
-    } else {
-        println!("Something is bad with querying the database?");
-        get_ret("Exiting")
     }
+
+    get_ret("The SQL was invalid apparently...")
 }
 
-fn evaluate_users_solution(conn: &Connection) -> Result<()> {
+fn evaluate_users_solution_bad(conn: &Connection) -> Result<()> {
     println!("🔍 Attempt detected! Evaluating your solution...");
 
     let test_sql = fs::read_to_string(TEST_SQL_PATH).expect("Could not read test.sql");
@@ -122,9 +165,48 @@ fn evaluate_users_solution(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
-fn get_ret(msg: &str) -> std::result::Result<(), rusqlite::Error> {
+pub fn evaluate_users_solution(conn: &Connection) -> Result<EvaluationResult> {
+    let test_sql = fs::read_to_string(TEST_SQL_PATH).expect("Could not read test.sql");
+
+    let mut stmt = conn.prepare(&test_sql)?;
+    let rows_iter = stmt.query_map([], |row| {
+        Ok(EvaluationRow {
+            cube_id: row.get(0)?,
+            monster_id: row.get(1)?,
+            is_correct: row.get::<_, i64>(2)? == 1,
+        })
+    })?;
+
+    let mut rows = Vec::new();
+    let mut all_correct = true;
+
+    for row in rows_iter {
+        let row = row?;
+        if !row.is_correct {
+            all_correct = false;
+        }
+        rows.push(row);
+    }
+
+    Ok(EvaluationResult { rows, all_correct })
+}
+
+fn get_ret<T>(msg: &str) -> std::result::Result<T, rusqlite::Error> {
     Err(rusqlite::Error::SqliteFailure(
         rusqlite::ffi::Error::new(0),
         Some(msg.into()),
     ))
+}
+
+#[derive(Debug, Clone)]
+pub struct EvaluationRow {
+    pub cube_id: i64,
+    pub monster_id: i64,
+    pub is_correct: bool,
+}
+
+#[derive(Debug, Clone)]
+pub struct EvaluationResult {
+    pub rows: Vec<EvaluationRow>,
+    pub all_correct: bool,
 }
