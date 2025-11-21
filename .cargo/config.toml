@@ -1,2 +1,5 @@
 [target.wasm32-wasip1]
 linker = "clang"
+
+[target.wasm32-wasip2]
+linker = "clang"
