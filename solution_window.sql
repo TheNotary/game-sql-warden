@@ -1,3 +1,4 @@
+CREATE VIEW strongest_monsters AS
 WITH cte_thing AS (SELECT cubes.id AS cube_id,
        cubes.name AS cube_name,
        monsters.id AS monster_id,
