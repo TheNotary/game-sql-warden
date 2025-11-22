@@ -18,7 +18,7 @@ pub static MIGRATION_PATH: &str = "migration.sql";
 pub static TEST_SQL_PATH: &str = "test.sql";
 
 fn main() -> Result<()> {
-    let resp = handle_db_condition(assess_db_condition()?)?;
+    let resp = handle_db_condition(assess_db_condition(DB_PATH)?)?;
 
     tui_loop(&resp)
 }
@@ -60,12 +60,12 @@ pub enum ChallengeError {
 
 pub type Result<T> = std::result::Result<T, ChallengeError>;
 
-fn assess_db_condition() -> Result<ChallengeState> {
-    if !Path::new(DB_PATH).exists() {
+fn assess_db_condition(db_path: &str) -> Result<ChallengeState> {
+    if !Path::new(db_path).exists() {
         return Ok(ChallengeState::MissingDb);
     }
 
-    let conn = Connection::open(DB_PATH)?;
+    let conn = Connection::open(db_path)?;
 
     if was_challenge_attempted(&conn)? {
         return Ok(ChallengeState::Attempted(conn));
@@ -109,6 +109,70 @@ fn was_challenge_attempted(conn: &Connection) -> Result<bool> {
 mod tests {
     use super::*;
     use rusqlite::Connection;
+    use tempfile::TempDir;
+
+    //////////////////////////////
+    // Test assess_db_condition //
+    //////////////////////////////
+
+    // Helper to set up a temporary database directory
+    fn setup_temp_db_dir() -> TempDir {
+        tempfile::tempdir().unwrap()
+    }
+
+    #[test]
+    fn test_missing_database() {
+        let temp_dir = setup_temp_db_dir();
+        let non_existent_path = temp_dir.path().join("nonexistent.db");
+
+        // Temporarily override DB_PATH for this test
+        // Note: This assumes DB_PATH can be mocked or you use dependency injection
+        let result = assess_db_condition(non_existent_path.to_str().unwrap()).unwrap();
+
+        assert!(matches!(result, ChallengeState::MissingDb));
+    }
+
+    #[test]
+    fn test_not_attempted() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+
+        // populate_db(create_monster_table_sql)
+        let conn = Connection::open(&db_path).unwrap();
+        conn.execute(
+            "CREATE TABLE monsters (id INTEGER, name TEXT, strength INTEGER)",
+            [],
+        )
+        .unwrap();
+        drop(conn);
+
+        let result = assess_db_condition(db_path.to_str().unwrap()).unwrap();
+        assert!(matches!(result, ChallengeState::NotAttempted));
+    }
+
+    #[test]
+    fn test_attempted() {
+        let temp_dir = tempfile::tempdir().unwrap();
+        let db_path = temp_dir.path().join("test.db");
+
+        // setup_db(create_incorrect_solution)
+        let conn = Connection::open(&db_path).unwrap();
+        conn.execute("CREATE TABLE monsters (id INTEGER)", [])
+            .unwrap();
+        conn.execute(
+            "CREATE VIEW strongest_monsters AS SELECT * FROM monsters",
+            [],
+        )
+        .unwrap();
+        drop(conn);
+
+        let result = assess_db_condition(db_path.to_str().unwrap()).unwrap();
+        assert!(matches!(result, ChallengeState::Attempted(_)));
+    }
+
+    //////////////////////////////////
+    // Test was_challenge_attempted //
+    //////////////////////////////////
 
     #[test]
     fn test_challenge_not_attempted() {
