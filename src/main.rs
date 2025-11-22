@@ -1,35 +1,26 @@
-use crossterm::event::{self, Event};
-use ratatui::{Frame, text::Text};
 use rusqlite::{Connection, OptionalExtension};
 use std::path::Path;
 use std::process::Command;
 use thiserror::Error;
 
 use crate::{
-    evaluation::evaluate_users_solution, presenter::db_created_string,
-    presenter::evaluation_to_string, presenter::instructions_string,
+    evaluation::evaluate_users_solution,
+    presenter::{db_created_string, evaluation_to_string, instructions_string},
+    tui::tui_loop,
 };
 
 mod evaluation;
 mod presenter;
+mod tui;
 
 pub static DB_PATH: &str = "database.db";
 pub static MIGRATION_PATH: &str = "migration.sql";
 pub static TEST_SQL_PATH: &str = "test.sql";
 
 fn main() -> Result<()> {
-    let mut terminal = ratatui::init();
-
     let resp = handle_db_condition(assess_db_condition()?)?;
 
-    loop {
-        terminal.draw(|meh| draw(meh, &resp))?;
-        if matches!(event::read()?, Event::Key(_)) {
-            break;
-        }
-    }
-    ratatui::restore();
-    Ok(())
+    tui_loop(&resp)
 }
 
 fn handle_db_condition(state: ChallengeState) -> Result<String> {
@@ -46,12 +37,7 @@ fn handle_db_condition(state: ChallengeState) -> Result<String> {
     }
 }
 
-fn draw(frame: &mut Frame, msg: &str) {
-    let text = Text::raw(msg);
-    frame.render_widget(text, frame.area());
-}
-
-enum ChallengeState {
+pub enum ChallengeState {
     MissingDb,
     NotAttempted,
     Attempted(Connection),
@@ -72,7 +58,7 @@ pub enum ChallengeError {
     Io(#[from] std::io::Error),
 }
 
-type Result<T> = std::result::Result<T, ChallengeError>;
+pub type Result<T> = std::result::Result<T, ChallengeError>;
 
 fn assess_db_condition() -> Result<ChallengeState> {
     if !Path::new(DB_PATH).exists() {
