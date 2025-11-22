@@ -1,6 +1,7 @@
-use rusqlite::{Connection, OptionalExtension, Result};
+use rusqlite::{Connection, OptionalExtension};
 use std::path::Path;
 use std::process::Command;
+use thiserror::Error;
 
 use crate::{
     evaluation::evaluate_users_solution, presenter::print_db_created_note,
@@ -19,12 +20,17 @@ fn main() -> Result<()> {
         ChallengeState::MissingDb => {
             println!("🧱 {DB_PATH} not found — constructing the Cubical Dungeon...");
             create_db()?;
-            return print_db_created_note();
+            print_db_created_note();
+            Ok(())
         }
-        ChallengeState::NotAttempted => print_instruction_what_to_do(),
+        ChallengeState::NotAttempted => {
+            print_instruction_what_to_do();
+            Ok(())
+        }
         ChallengeState::Attempted(conn) => {
             let report = evaluate_users_solution(&conn)?;
-            print_evaluation(&report)
+            print_evaluation(&report);
+            Ok(())
         }
     }
 }
@@ -34,6 +40,23 @@ enum ChallengeState {
     NotAttempted,
     Attempted(Connection),
 }
+
+#[derive(Error, Debug)]
+pub enum ChallengeError {
+    #[error("Migration file '{0}' not found")]
+    MigrationFileMissing(String),
+
+    #[error("sqlite3 command failed to apply migration")]
+    MigrationFailed,
+
+    #[error("Database operation failed: {0}")]
+    Database(#[from] rusqlite::Error),
+
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+}
+
+type Result<T> = std::result::Result<T, ChallengeError>;
 
 fn assess_db_condition() -> Result<ChallengeState> {
     if !Path::new(DB_PATH).exists() {
@@ -51,18 +74,19 @@ fn assess_db_condition() -> Result<ChallengeState> {
 fn create_db() -> Result<()> {
     if !Path::new(MIGRATION_PATH).exists() {
         eprintln!("❌ {MIGRATION_PATH} missing — cannot build {DB_PATH}");
-        return get_ret("Migration file missing");
+        return Err(ChallengeError::MigrationFileMissing(
+            MIGRATION_PATH.to_string(),
+        ));
     }
 
     let status = Command::new("sqlite3")
         .arg(DB_PATH)
         .arg(format!(".read {}", MIGRATION_PATH))
-        .status()
-        .expect("failed to run sqlite3");
+        .status()?;
 
     if !status.success() {
         eprintln!("❌ sqlite3 failed to apply migration");
-        return get_ret("sqlite3 failed to apply migration");
+        return Err(ChallengeError::MigrationFailed);
     }
 
     Ok(())
@@ -73,24 +97,10 @@ fn was_challenge_attempted(conn: &Connection) -> Result<bool> {
         "SELECT name FROM sqlite_master WHERE type='view' AND name='strongest_monsters';",
     )?;
 
-    if let Ok(attempt) = stmt
+    Ok(stmt
         .query_row([], |row| row.get::<usize, String>(0))
-        .optional()
-    {
-        match attempt {
-            None => return Ok(false),
-            Some(_) => return Ok(true),
-        }
-    }
-
-    get_ret("The SQL was invalid apparently...")
-}
-
-fn get_ret<T>(msg: &str) -> std::result::Result<T, rusqlite::Error> {
-    Err(rusqlite::Error::SqliteFailure(
-        rusqlite::ffi::Error::new(0),
-        Some(msg.into()),
-    ))
+        .optional()?
+        .is_some())
 }
 
 #[cfg(test)]
