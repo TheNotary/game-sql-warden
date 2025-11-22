@@ -1,11 +1,13 @@
+use crossterm::event::{self, Event};
+use ratatui::{Frame, text::Text};
 use rusqlite::{Connection, OptionalExtension};
 use std::path::Path;
 use std::process::Command;
 use thiserror::Error;
 
 use crate::{
-    evaluation::evaluate_users_solution, presenter::print_db_created_note,
-    presenter::print_evaluation, presenter::print_instruction_what_to_do,
+    evaluation::evaluate_users_solution, presenter::db_created_string,
+    presenter::evaluation_to_string, presenter::instructions_string,
 };
 
 mod evaluation;
@@ -16,23 +18,37 @@ pub static MIGRATION_PATH: &str = "migration.sql";
 pub static TEST_SQL_PATH: &str = "test.sql";
 
 fn main() -> Result<()> {
-    match assess_db_condition()? {
-        ChallengeState::MissingDb => {
-            println!("🧱 {DB_PATH} not found — constructing the Cubical Dungeon...");
-            create_db()?;
-            print_db_created_note();
-            Ok(())
-        }
-        ChallengeState::NotAttempted => {
-            print_instruction_what_to_do();
-            Ok(())
-        }
-        ChallengeState::Attempted(conn) => {
-            let report = evaluate_users_solution(&conn)?;
-            print_evaluation(&report);
-            Ok(())
+    let mut terminal = ratatui::init();
+
+    let resp = handle_db_condition(assess_db_condition()?)?;
+
+    loop {
+        terminal.draw(|meh| draw(meh, &resp))?;
+        if matches!(event::read()?, Event::Key(_)) {
+            break;
         }
     }
+    ratatui::restore();
+    Ok(())
+}
+
+fn handle_db_condition(state: ChallengeState) -> Result<String> {
+    match state {
+        ChallengeState::MissingDb => {
+            create_db()?;
+            Ok(db_created_string())
+        }
+        ChallengeState::NotAttempted => Ok(instructions_string()),
+        ChallengeState::Attempted(conn) => {
+            let report = evaluate_users_solution(&conn)?;
+            Ok(evaluation_to_string(&report))
+        }
+    }
+}
+
+fn draw(frame: &mut Frame, msg: &str) {
+    let text = Text::raw(msg);
+    frame.render_widget(text, frame.area());
 }
 
 enum ChallengeState {
