@@ -4,11 +4,13 @@ use std::process::Command;
 use thiserror::Error;
 
 use crate::{
+    app::App,
     evaluation::evaluate_users_solution,
     presenter::{db_created_string, evaluation_to_string, instructions_string},
     tui::tui_loop,
 };
 
+mod app;
 mod evaluation;
 mod presenter;
 mod tui;
@@ -19,7 +21,7 @@ pub static TEST_SQL_PATH: &str = "test.sql";
 
 fn main() -> Result<()> {
     match run_program() {
-        Ok(resp) => tui_loop(&resp),
+        Ok(app) => tui_loop(&app),
         Err(ChallengeError::MigrationFailed) => {
             eprintln!("❌ sqlite3 failed to apply migration");
             delete_db_file(DB_PATH)
@@ -32,9 +34,14 @@ fn main() -> Result<()> {
     }
 }
 
-fn run_program() -> Result<String> {
+fn run_program() -> Result<App> {
     let resp = handle_db_condition(assess_db_condition(DB_PATH)?)?;
-    Ok(resp)
+    let app = App {
+        level: "lvl 1 - Strongest Cubical".to_string(),
+        lore: "You are in a dungeon".to_string(),
+        output: resp.to_string(),
+    };
+    Ok(app)
 }
 
 fn handle_db_condition(state: ChallengeState) -> Result<String> {
