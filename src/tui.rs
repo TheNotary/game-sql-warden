@@ -44,6 +44,10 @@ fn draw(frame: &mut Frame, app: &App) {
     let controls_block = Block::bordered().title(Line::from("").centered());
     let bottom_block = Block::bordered().title(Line::from("CPU").centered());
 
+    // let input = "# Heading\n\n**bold**";
+    let inst = app.instructions.clone();
+    let markdown = tui_markdown::from_str(&inst);
+
     let lore_text = Paragraph::new(app.lore.clone())
         .block(lore_block)
         .wrap(Wrap { trim: true });
@@ -52,12 +56,17 @@ fn draw(frame: &mut Frame, app: &App) {
         .centered()
         .wrap(Wrap { trim: true });
 
-    let output_text = Paragraph::new(app.instructions.clone())
-        .block(instructions_block)
-        .wrap(Wrap { trim: true });
-    // let output_text = Paragraph::new(app.output.clone())
+    // let instructions_text = Paragraph::new(markdown)
     //     .block(instructions_block)
     //     .wrap(Wrap { trim: true });
+
+    // let instructions_text = Paragraph::new(app.instructions.clone())
+    //     .block(instructions_block)
+    //     .wrap(Wrap { trim: true });
+
+    let instructions_text = Paragraph::new(app.output.clone())
+        .block(instructions_block)
+        .wrap(Wrap { trim: true });
 
     let controls_text = Paragraph::new(controls_lines)
         .block(controls_block)
@@ -65,7 +74,7 @@ fn draw(frame: &mut Frame, app: &App) {
         .wrap(Wrap { trim: true });
 
     frame.render_widget(title_text, title_area);
-    frame.render_widget(output_text, output_area);
+    frame.render_widget(instructions_text, output_area);
     frame.render_widget(lore_text, lore_area);
     frame.render_widget(controls_text, controls_area);
 
