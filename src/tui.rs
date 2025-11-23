@@ -34,15 +34,15 @@ fn draw(frame: &mut Frame, app: &App) {
     use Constraint::{Fill, Length, Min};
 
     let vertical = Layout::vertical([Length(3), Min(0), Length(4), Length(3)]);
-    let [title_area, main_area, controls_area, input_area] = vertical.areas(frame.area());
+    let [title_area, main_area, controls_area, bottom_area] = vertical.areas(frame.area());
     let horizontal = Layout::horizontal([Fill(1); 2]);
     let [lore_area, output_area] = horizontal.areas(main_area);
 
     let title_block = Block::bordered().title(Line::from("STAGE").centered());
-    let output_block = Block::bordered().title("CPU");
+    let instructions_block = Block::bordered().title("INSTRUCTIONS");
     let lore_block = Block::bordered().title("LORE");
     let controls_block = Block::bordered().title(Line::from("").centered());
-    let input_block = Block::bordered().title(Line::from("INPUT").centered());
+    let bottom_block = Block::bordered().title(Line::from("CPU").centered());
 
     let lore_text = Paragraph::new(app.lore.clone())
         .block(lore_block)
@@ -51,9 +51,14 @@ fn draw(frame: &mut Frame, app: &App) {
         .block(title_block)
         .centered()
         .wrap(Wrap { trim: true });
-    let output_text = Paragraph::new(app.output.clone())
-        .block(output_block)
+
+    let output_text = Paragraph::new(app.instructions.clone())
+        .block(instructions_block)
         .wrap(Wrap { trim: true });
+    // let output_text = Paragraph::new(app.output.clone())
+    //     .block(instructions_block)
+    //     .wrap(Wrap { trim: true });
+
     let controls_text = Paragraph::new(controls_lines)
         .block(controls_block)
         .centered()
@@ -64,5 +69,5 @@ fn draw(frame: &mut Frame, app: &App) {
     frame.render_widget(lore_text, lore_area);
     frame.render_widget(controls_text, controls_area);
 
-    frame.render_widget(input_block, input_area);
+    frame.render_widget(bottom_block, bottom_area);
 }
