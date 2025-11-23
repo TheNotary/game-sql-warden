@@ -4,7 +4,7 @@ use ratatui::{
     Frame,
     layout::{Constraint, Layout},
     text::Line,
-    widgets::{Block, Paragraph},
+    widgets::{Block, Paragraph, Wrap},
 };
 
 use crate::{Result, app::App};
@@ -34,19 +34,20 @@ fn draw(frame: &mut Frame, app: &App) {
     let input_block = Block::bordered().title(Line::from("INPUT").centered());
     let lore_block = Block::bordered().title("LORE");
 
-    let lore_text = Paragraph::new(app.lore.clone()).block(lore_block);
+    let lore_text = Paragraph::new(app.lore.clone())
+        .block(lore_block)
+        .wrap(Wrap { trim: true });
     let title_text = Paragraph::new(app.level.clone())
         .block(title_block)
-        .centered();
-    let output_text = Paragraph::new(app.output.clone()).block(output_block);
+        .centered()
+        .wrap(Wrap { trim: true });
+    let output_text = Paragraph::new(app.output.clone())
+        .block(output_block)
+        .wrap(Wrap { trim: true });
 
     frame.render_widget(title_text, title_area);
     frame.render_widget(output_text, output_area);
     frame.render_widget(lore_text, lore_area);
 
     frame.render_widget(input_block, status_area);
-
-    // frame.render_widget(lore_block, lore_area);
-    // frame.render_widget(title_block, title_area);
-    // frame.render_widget(output_block, output_area);
 }

@@ -1,4 +1,5 @@
 use rusqlite::{Connection, OptionalExtension};
+use std::fs::read_to_string;
 use std::path::Path;
 use std::process::Command;
 use thiserror::Error;
@@ -16,8 +17,10 @@ mod presenter;
 mod tui;
 
 pub static DB_PATH: &str = "database.db";
-pub static MIGRATION_PATH: &str = "migration.sql";
-pub static TEST_SQL_PATH: &str = "test.sql";
+pub static LORE_PATH: &str = "01_lore.md";
+pub static INTRUCTIONS_PATH: &str = "03_instructions.md";
+pub static MIGRATION_PATH: &str = "03_migration.sql";
+pub static TEST_SQL_PATH: &str = "04_test.sql";
 
 fn main() -> Result<()> {
     match run_program() {
@@ -35,11 +38,13 @@ fn main() -> Result<()> {
 }
 
 fn run_program() -> Result<App> {
-    let resp = handle_db_condition(assess_db_condition(DB_PATH)?)?;
+    let output = handle_db_condition(assess_db_condition(DB_PATH)?)?;
+    let lore = read_to_string(LORE_PATH).expect(&format!("Unable to read {LORE_PATH}."));
+
     let app = App {
         level: "lvl 1 - Strongest Cubical".to_string(),
-        lore: "You are in a dungeon".to_string(),
-        output: resp.to_string(),
+        lore: lore,
+        output: output.to_string(),
     };
     Ok(app)
 }
