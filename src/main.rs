@@ -18,9 +18,23 @@ pub static MIGRATION_PATH: &str = "migration.sql";
 pub static TEST_SQL_PATH: &str = "test.sql";
 
 fn main() -> Result<()> {
-    let resp = handle_db_condition(assess_db_condition(DB_PATH)?)?;
+    match run_program() {
+        Ok(resp) => tui_loop(&resp),
+        Err(ChallengeError::MigrationFailed) => {
+            eprintln!("❌ sqlite3 failed to apply migration");
+            delete_db_file(DB_PATH)
+        }
+        Err(ChallengeError::MigrationFileMissing(_)) => {
+            eprintln!("❌ {MIGRATION_PATH} missing — cannot build {DB_PATH}");
+            Ok(())
+        }
+        Err(e) => Err(e),
+    }
+}
 
-    tui_loop(&resp)
+fn run_program() -> Result<String> {
+    let resp = handle_db_condition(assess_db_condition(DB_PATH)?)?;
+    Ok(resp)
 }
 
 fn handle_db_condition(state: ChallengeState) -> Result<String> {
@@ -73,9 +87,16 @@ fn assess_db_condition(db_path: &str) -> Result<ChallengeState> {
     Ok(ChallengeState::NotAttempted)
 }
 
+fn delete_db_file(db_path_str: &str) -> Result<()> {
+    let db_path = Path::new(db_path_str);
+    if db_path.exists() {
+        std::fs::remove_file(db_path)?;
+    }
+    Ok(())
+}
+
 fn create_db() -> Result<()> {
     if !Path::new(MIGRATION_PATH).exists() {
-        eprintln!("❌ {MIGRATION_PATH} missing — cannot build {DB_PATH}");
         return Err(ChallengeError::MigrationFileMissing(
             MIGRATION_PATH.to_string(),
         ));
@@ -87,7 +108,6 @@ fn create_db() -> Result<()> {
         .status()?;
 
     if !status.success() {
-        eprintln!("❌ sqlite3 failed to apply migration");
         return Err(ChallengeError::MigrationFailed);
     }
 
