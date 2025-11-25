@@ -80,7 +80,11 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
         }
         // Edit solution.sql
         KeyCode::Char('e') => {
-            todo!();
+            ratatui::restore();
+            let _ = run_nano_lol();
+            // let _ = run_vi();
+            app.output = String::new();
+            return EventResult::ReloadTerminal;
         }
         _ => {}
     }
@@ -90,8 +94,9 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
 pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     let mut controls_lines = vec![];
     let controls_txts = [
-        "‣ [j/k] scroll the lore.          ‣ [.,/] edit solution.sql",
-        "‣ [tab] cycle lore/instructions.  ‣ [enter] test your solution.",
+        "‣ [tab] cycle lore/instructions.   ‣ [.,/] enter sqlite shell.",
+        "‣ [j/k] scroll the lore.            ‣ [enter] test your solution.",
+        "‣ [e] edit solution.sql",
     ];
     for controls_txt in controls_txts {
         controls_lines.push(Line::from(controls_txt));
@@ -99,16 +104,15 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
 
     use Constraint::{Fill, Length, Min};
 
-    let vertical = Layout::vertical([Length(3), Min(0), Length(4), Length(3)]);
-    let [title_area, main_area, controls_area, bottom_area] = vertical.areas(frame.area());
+    let vertical = Layout::vertical([Length(3), Min(0), Length(5)]);
+    let [title_area, main_area, controls_area] = vertical.areas(frame.area());
     let horizontal = Layout::horizontal([Fill(1); 2]);
     let [lore_area, output_area] = horizontal.areas(main_area);
 
     let title_block = Block::bordered().title(Line::from("STAGE").centered());
     let right_page_block = Block::bordered().title("OUTPUT");
     let left_pane_block = Block::bordered().title("LORE");
-    let controls_block = Block::bordered().title(Line::from("").centered());
-    let bottom_block = Block::bordered().title(Line::from("CPU").centered());
+    let controls_block = Block::bordered().title(Line::from("CONTROLS").centered());
 
     let left_pane_content = match app.left_pane_mode {
         LeftPaneMode::Lore => app.lore.clone(),
@@ -146,14 +150,40 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     frame.render_widget(right_pane_text, output_area);
     frame.render_widget(left_pane_text, lore_area);
     frame.render_widget(controls_text, controls_area);
-
-    frame.render_widget(bottom_block, bottom_area);
 }
 
 pub fn run_sqlite() -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("CTRL + D to exit\n");
     let mut child = Command::new("sqlite3")
         .arg("database.db")
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .spawn()?;
+
+    // Wait until user exits with .quit or CTRL+D
+    child.wait()?;
+
+    Ok(())
+}
+
+fn run_nano_lol() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut child = Command::new("nano")
+        .arg("solution.sql")
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .spawn()?;
+
+    // Wait until user exits with .quit or CTRL+D
+    child.wait()?;
+
+    Ok(())
+}
+
+fn run_vi() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    let mut child = Command::new("vi")
+        .arg("solution.sql")
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
