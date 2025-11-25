@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, poll};
 
@@ -9,7 +9,10 @@ use ratatui::{
     widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, Wrap},
 };
 
-use crate::{Result, app::App};
+use crate::{
+    Result,
+    app::{App, LeftPaneMode},
+};
 
 pub fn tui_loop(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
     loop {
@@ -32,14 +35,31 @@ pub fn tui_loop(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
 
 fn handle_key_event(key: event::KeyEvent, app: &mut App) -> bool {
     match key.code {
-        // Handle Quitting
+        // Quit
         KeyCode::Char('q') | KeyCode::Esc | KeyCode::Left | KeyCode::Char('h') => return true,
-        // Handle scrolling Lore Up I guess
+        // Scroll Down
         KeyCode::Char('j') => {
             app.scroll_down();
         }
+        // Scroll Up
         KeyCode::Char('k') => {
             app.scroll_up();
+        }
+        // Cycle Lore/ Instructions
+        KeyCode::Tab => {
+            app.cycle_left_pane();
+        }
+        // Test solution.sql
+        KeyCode::Enter => {
+            todo!();
+        }
+        // Enter SQLite Console
+        KeyCode::Char('/') | KeyCode::Char('.') => {
+            todo!();
+        }
+        // Edit solution.sql
+        KeyCode::Char('e') => {
+            todo!();
         }
         _ => {}
     }
@@ -65,42 +85,32 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
 
     let title_block = Block::bordered().title(Line::from("STAGE").centered());
     let instructions_block = Block::bordered().title("INSTRUCTIONS");
-    let lore_block = Block::bordered().title("LORE");
+    let left_pane_block = Block::bordered().title("LORE");
     let controls_block = Block::bordered().title(Line::from("").centered());
     let bottom_block = Block::bordered().title(Line::from("CPU").centered());
 
-    // let lore_text = Paragraph::new(app.lore.clone())
-    //     .block(lore_block)
-    //     .wrap(Wrap { trim: true });
+    let left_pane_content = match app.left_pane_mode {
+        LeftPaneMode::Lore => app.lore.clone(),
+        LeftPaneMode::Instructions => app.instructions.clone(),
+    };
 
-    let lore_text = Paragraph::new(app.lore.clone())
-        .block(lore_block)
-        .scroll((app.lore_scroll as u16, 0));
-
-    // frame.render_widget(lore_text, lore_area);
+    let left_pane_text = Paragraph::new(left_pane_content)
+        .block(left_pane_block)
+        .wrap(Wrap { trim: true })
+        .scroll((app.left_pane_scroll as u16, 0));
 
     frame.render_stateful_widget(
         Scrollbar::new(ScrollbarOrientation::VerticalRight)
             .begin_symbol(Some("↑"))
             .end_symbol(Some("↓")),
         lore_area,
-        &mut app.lore_scroll_state,
+        &mut app.left_pane_scroll_state,
     );
 
     let title_text = Paragraph::new(app.level.clone())
         .block(title_block)
         .centered()
         .wrap(Wrap { trim: true });
-
-    // let inst = instructions;
-    // let markdown = tui_markdown::from_str(&inst);
-    // let instructions_text = Paragraph::new(markdown)
-    //     .block(instructions_block)
-    //     .wrap(Wrap { trim: true });
-
-    // let instructions_text = Paragraph::new(self.instructions)
-    //     .block(instructions_block)
-    //     .wrap(Wrap { trim: true });
 
     let instructions_text = Paragraph::new(app.output.clone())
         .block(instructions_block)
@@ -113,7 +123,7 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
 
     frame.render_widget(title_text, title_area);
     frame.render_widget(instructions_text, output_area);
-    frame.render_widget(lore_text, lore_area);
+    frame.render_widget(left_pane_text, lore_area);
     frame.render_widget(controls_text, controls_area);
 
     frame.render_widget(bottom_block, bottom_area);
