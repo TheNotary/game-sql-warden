@@ -19,10 +19,8 @@ pub static MIGRATION_PATH: &str = "03_migration.sql";
 pub static TEST_SQL_PATH: &str = "04_test.sql";
 
 fn main() -> Result<()> {
-    let mut terminal = ratatui::init();
-
     match run_program() {
-        Ok(mut app) => tui_loop(&mut terminal, &mut app),
+        Ok(mut app) => tui_loop(&mut app),
         Err(ChallengeError::MigrationFailed) => {
             eprintln!("❌ sqlite3 failed to apply migration");
             delete_db_file(DB_PATH)

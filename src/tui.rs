@@ -1,9 +1,9 @@
+use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, poll};
-
 use ratatui::{
-    DefaultTerminal, Frame,
+    Frame,
     layout::{Constraint, Layout},
     text::Line,
     widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, Wrap},
@@ -15,15 +15,24 @@ use crate::{
     app::{App, LeftPaneMode},
 };
 
-pub fn tui_loop(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
+enum EventResult {
+    Quit,
+    Loop,
+    ReloadTerminal,
+}
+
+pub fn tui_loop(app: &mut App) -> Result<()> {
+    let mut terminal = ratatui::init();
+
     loop {
         terminal.draw(|frame| draw_logic(frame, app))?;
 
         if poll(Duration::from_millis(0))? {
             if let Event::Key(key) = event::read()? {
-                let should_quit = handle_key_event(key, app);
-                if should_quit {
-                    break;
+                match handle_key_event(key, app) {
+                    EventResult::Quit => break,
+                    EventResult::Loop => continue,
+                    EventResult::ReloadTerminal => terminal = ratatui::init(),
                 }
             }
         }
@@ -34,10 +43,12 @@ pub fn tui_loop(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
     Ok(())
 }
 
-fn handle_key_event(key: event::KeyEvent, app: &mut App) -> bool {
+fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
     match key.code {
         // Quit
-        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Left | KeyCode::Char('h') => return true,
+        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Left | KeyCode::Char('h') => {
+            return EventResult::Quit;
+        }
         // Scroll Down
         KeyCode::Char('j') => {
             app.scroll_down();
@@ -61,8 +72,11 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> bool {
             }
         }
         // Enter SQLite Console
-        KeyCode::Char('/') | KeyCode::Char('.') => {
-            todo!();
+        KeyCode::Char('/') | KeyCode::Char('.') | KeyCode::Char(',') => {
+            ratatui::restore();
+            let _ = run_sqlite();
+            app.output = String::new();
+            return EventResult::ReloadTerminal;
         }
         // Edit solution.sql
         KeyCode::Char('e') => {
@@ -70,14 +84,14 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> bool {
         }
         _ => {}
     }
-    false
+    EventResult::Loop
 }
 
 pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     let mut controls_lines = vec![];
     let controls_txts = [
-        "Use j/k to scroll the lore. Use e to enter edit mode to define your sql.",
-        "Use t to enter talk mode. Use [enter] to test your solution.",
+        "‣ [j/k] scroll the lore.          ‣ [.,/] edit solution.sql",
+        "‣ [tab] cycle lore/instructions.  ‣ [enter] test your solution.",
     ];
     for controls_txt in controls_txts {
         controls_lines.push(Line::from(controls_txt));
@@ -91,7 +105,7 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     let [lore_area, output_area] = horizontal.areas(main_area);
 
     let title_block = Block::bordered().title(Line::from("STAGE").centered());
-    let instructions_block = Block::bordered().title("INSTRUCTIONS");
+    let right_page_block = Block::bordered().title("OUTPUT");
     let left_pane_block = Block::bordered().title("LORE");
     let controls_block = Block::bordered().title(Line::from("").centered());
     let bottom_block = Block::bordered().title(Line::from("CPU").centered());
@@ -119,8 +133,8 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
         .centered()
         .wrap(Wrap { trim: true });
 
-    let instructions_text = Paragraph::new(app.output.clone())
-        .block(instructions_block)
+    let right_pane_text = Paragraph::new(app.output.clone())
+        .block(right_page_block)
         .wrap(Wrap { trim: true });
 
     let controls_text = Paragraph::new(controls_lines)
@@ -129,9 +143,24 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
         .wrap(Wrap { trim: true });
 
     frame.render_widget(title_text, title_area);
-    frame.render_widget(instructions_text, output_area);
+    frame.render_widget(right_pane_text, output_area);
     frame.render_widget(left_pane_text, lore_area);
     frame.render_widget(controls_text, controls_area);
 
     frame.render_widget(bottom_block, bottom_area);
+}
+
+pub fn run_sqlite() -> std::result::Result<(), Box<dyn std::error::Error>> {
+    println!("CTRL + D to exit\n");
+    let mut child = Command::new("sqlite3")
+        .arg("database.db")
+        .stdin(Stdio::inherit())
+        .stdout(Stdio::inherit())
+        .stderr(Stdio::inherit())
+        .spawn()?;
+
+    // Wait until user exits with .quit or CTRL+D
+    child.wait()?;
+
+    Ok(())
 }
