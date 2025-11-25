@@ -1,27 +1,52 @@
-use crossterm::event::{self, Event};
+use std::time::{Duration, Instant};
+
+use crossterm::event::{self, Event, KeyCode, poll};
 
 use ratatui::{
-    Frame,
+    DefaultTerminal, Frame,
     layout::{Constraint, Layout},
     text::Line,
-    widgets::{Block, Paragraph, Wrap},
+    widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, Wrap},
 };
 
 use crate::{Result, app::App};
 
-pub fn tui_loop(app: &App) -> Result<()> {
-    let mut terminal = ratatui::init();
+pub fn tui_loop(terminal: &mut DefaultTerminal, app: &mut App) -> Result<()> {
     loop {
-        terminal.draw(|meh| draw(meh, app))?;
-        if matches!(event::read()?, Event::Key(_)) {
-            break;
+        terminal.draw(|frame| draw_logic(frame, app))?;
+
+        if poll(Duration::from_millis(0))? {
+            if let Event::Key(key) = event::read()? {
+                let should_quit = handle_key_event(key, app);
+                if should_quit {
+                    break;
+                }
+            }
         }
     }
+
     ratatui::restore();
+
     Ok(())
 }
 
-fn draw(frame: &mut Frame, app: &App) {
+fn handle_key_event(key: event::KeyEvent, app: &mut App) -> bool {
+    match key.code {
+        // Handle Quitting
+        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Left | KeyCode::Char('h') => return true,
+        // Handle scrolling Lore Up I guess
+        KeyCode::Char('j') => {
+            app.scroll_down();
+        }
+        KeyCode::Char('k') => {
+            app.scroll_up();
+        }
+        _ => {}
+    }
+    false
+}
+
+pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     let mut controls_lines = vec![];
     let controls_txts = [
         "Use j/k to scroll the lore. Use e to enter edit mode to define your sql.",
@@ -44,23 +69,36 @@ fn draw(frame: &mut Frame, app: &App) {
     let controls_block = Block::bordered().title(Line::from("").centered());
     let bottom_block = Block::bordered().title(Line::from("CPU").centered());
 
-    // let input = "# Heading\n\n**bold**";
-    let inst = app.instructions.clone();
-    let markdown = tui_markdown::from_str(&inst);
+    // let lore_text = Paragraph::new(app.lore.clone())
+    //     .block(lore_block)
+    //     .wrap(Wrap { trim: true });
 
     let lore_text = Paragraph::new(app.lore.clone())
         .block(lore_block)
-        .wrap(Wrap { trim: true });
+        .scroll((app.lore_scroll as u16, 0));
+
+    // frame.render_widget(lore_text, lore_area);
+
+    frame.render_stateful_widget(
+        Scrollbar::new(ScrollbarOrientation::VerticalRight)
+            .begin_symbol(Some("↑"))
+            .end_symbol(Some("↓")),
+        lore_area,
+        &mut app.lore_scroll_state,
+    );
+
     let title_text = Paragraph::new(app.level.clone())
         .block(title_block)
         .centered()
         .wrap(Wrap { trim: true });
 
+    // let inst = instructions;
+    // let markdown = tui_markdown::from_str(&inst);
     // let instructions_text = Paragraph::new(markdown)
     //     .block(instructions_block)
     //     .wrap(Wrap { trim: true });
 
-    // let instructions_text = Paragraph::new(app.instructions.clone())
+    // let instructions_text = Paragraph::new(self.instructions)
     //     .block(instructions_block)
     //     .wrap(Wrap { trim: true });
 

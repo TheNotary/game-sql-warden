@@ -23,8 +23,10 @@ pub static MIGRATION_PATH: &str = "03_migration.sql";
 pub static TEST_SQL_PATH: &str = "04_test.sql";
 
 fn main() -> Result<()> {
+    let mut terminal = ratatui::init();
+
     match run_program() {
-        Ok(app) => tui_loop(&app),
+        Ok(mut app) => tui_loop(&mut terminal, &mut app),
         Err(ChallengeError::MigrationFailed) => {
             eprintln!("❌ sqlite3 failed to apply migration");
             delete_db_file(DB_PATH)
@@ -38,17 +40,14 @@ fn main() -> Result<()> {
 }
 
 fn run_program() -> Result<App> {
-    let output = handle_db_condition(assess_db_condition(DB_PATH)?)?;
+    let level = "lvl 1 - Strongest Cubical".to_string();
     let lore = read_to_string(LORE_PATH).expect(&format!("Unable to read {LORE_PATH}."));
     let instructions =
         read_to_string(INSTRUCTIONS_PATH).expect(&format!("Unable to read {INSTRUCTIONS_PATH}."));
+    let output = handle_db_condition(assess_db_condition(DB_PATH)?)?;
 
-    let app = App {
-        level: "lvl 1 - Strongest Cubical".to_string(),
-        lore: lore,
-        instructions: instructions,
-        output: output.to_string(),
-    };
+    let app = App::new(level, lore, instructions, output);
+
     Ok(app)
 }
 
