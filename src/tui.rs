@@ -10,7 +10,7 @@ use ratatui::{
 };
 
 use crate::{
-    Result,
+    api::Result,
     app::{App, LeftPaneMode},
 };
 
