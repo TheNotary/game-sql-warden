@@ -10,7 +10,8 @@ use ratatui::{
 };
 
 use crate::{
-    api::Result,
+    DB_PATH,
+    api::{Result, assess_db_condition, handle_db_condition},
     app::{App, LeftPaneMode},
 };
 
@@ -51,7 +52,13 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> bool {
         }
         // Test solution.sql
         KeyCode::Enter => {
-            todo!();
+            if let Ok(output) = assess_db_condition(DB_PATH).and_then(handle_db_condition) {
+                app.output = output;
+            } else {
+                app.output =
+                    "Error: Something went wrong assessing your solution and the database =/"
+                        .to_string();
+            }
         }
         // Enter SQLite Console
         KeyCode::Char('/') | KeyCode::Char('.') => {
