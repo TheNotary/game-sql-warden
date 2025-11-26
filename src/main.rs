@@ -1,7 +1,10 @@
 use std::fs::read_to_string;
 
 use crate::{
-    api::{ChallengeError, Result, assess_db_condition, delete_db_file, handle_db_condition},
+    api::{
+        ChallengeError, Result, assess_db_condition, delete_db_file, handle_db_condition,
+        read_instructions_file, read_lore_file, read_solution_file,
+    },
     app::App,
     tui::tui_loop,
 };
@@ -36,12 +39,10 @@ fn main() -> Result<()> {
 
 fn run_program() -> Result<App> {
     let level = "lvl 1 - Strongest Cubical".to_string();
-    let lore = read_to_string(LORE_PATH).expect(&format!("Unable to read {LORE_PATH}."));
-    let instructions =
-        read_to_string(INSTRUCTIONS_PATH).expect(&format!("Unable to read {INSTRUCTIONS_PATH}."));
+    let lore = read_lore_file();
+    let instructions = read_instructions_file();
     let output = handle_db_condition(assess_db_condition(DB_PATH)?)?;
-    let solution =
-        read_to_string(SOLUTION_PATH).expect(&format!("Unable to read {SOLUTION_PATH}."));
+    let solution = read_solution_file();
 
     let app = App::new(level, lore, instructions, output, solution);
 

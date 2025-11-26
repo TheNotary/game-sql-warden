@@ -1,7 +1,9 @@
 use std::process::{Command, Stdio};
+use std::sync::mpsc::{Receiver, RecvTimeoutError, channel};
 use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, poll};
+use notify::{EventKind, FsEventWatcher, RecommendedWatcher, RecursiveMode, Watcher};
 use ratatui::style::{Color, Stylize};
 use ratatui::{
     Frame,
@@ -10,6 +12,8 @@ use ratatui::{
     widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, Wrap},
 };
 
+use crate::SOLUTION_PATH;
+use crate::api::read_solution_file;
 use crate::app::RightPaneMode;
 use crate::{
     DB_PATH,
@@ -25,11 +29,13 @@ enum EventResult {
 
 pub fn tui_loop(app: &mut App) -> Result<()> {
     let mut terminal = ratatui::init();
+    let (_watcher, rx) = setup_file_watcher().expect("COMPUTER!");
 
     loop {
         terminal.draw(|frame| draw_logic(frame, app))?;
 
-        if poll(Duration::from_millis(250))? {
+        // every 150ms, check for inputs from user
+        if poll(Duration::from_millis(150))? {
             if let Event::Key(key) = event::read()? {
                 match handle_key_event(key, app) {
                     EventResult::Quit => break,
@@ -38,11 +44,31 @@ pub fn tui_loop(app: &mut App) -> Result<()> {
                 }
             }
         }
+
+        // FIXME: Move to function?
+        match rx.recv_timeout(Duration::from_millis(10)) {
+            Ok(Ok(event)) => {
+                if let EventKind::Modify(_) = event.kind {
+                    app.solution = read_solution_file();
+                }
+            }
+            Ok(Err(e)) => println!("Watcher error: {:?}", e),
+            Err(RecvTimeoutError::Timeout) => {}
+            Err(e) => println!("Channel error: {:?}", e),
+        }
     }
 
     ratatui::restore();
 
     Ok(())
+}
+
+fn setup_file_watcher() -> notify::Result<(FsEventWatcher, Receiver<notify::Result<notify::Event>>)>
+{
+    let (tx, rx) = channel();
+    let mut watcher = notify::recommended_watcher(tx)?;
+    watcher.watch(SOLUTION_PATH.as_ref(), RecursiveMode::NonRecursive)?;
+    Ok((watcher, rx))
 }
 
 fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {

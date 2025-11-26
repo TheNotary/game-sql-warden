@@ -1,13 +1,14 @@
 use rusqlite::{Connection, OptionalExtension};
-use std::path::Path;
 use std::process::Command;
+use std::{fs::read_to_string, path::Path};
 use thiserror::Error;
 
 use crate::{
-    DB_PATH, MIGRATION_PATH,
+    DB_PATH, MIGRATION_PATH, SOLUTION_PATH,
     evaluation::evaluate_users_solution,
     presenter::{db_created_string, evaluation_to_string, instructions_string},
 };
+use crate::{INSTRUCTIONS_PATH, LORE_PATH};
 
 pub fn handle_db_condition(state: ChallengeState) -> Result<String> {
     match state {
@@ -65,6 +66,18 @@ pub fn delete_db_file(db_path_str: &str) -> Result<()> {
         std::fs::remove_file(db_path)?;
     }
     Ok(())
+}
+
+pub fn read_solution_file() -> String {
+    read_to_string(SOLUTION_PATH).expect(&format!("Unable to read {SOLUTION_PATH}."))
+}
+
+pub fn read_instructions_file() -> String {
+    read_to_string(INSTRUCTIONS_PATH).expect(&format!("Unable to read {INSTRUCTIONS_PATH}."))
+}
+
+pub fn read_lore_file() -> String {
+    read_to_string(LORE_PATH).expect(&format!("Unable to read {LORE_PATH}."))
 }
 
 fn create_db() -> Result<()> {
