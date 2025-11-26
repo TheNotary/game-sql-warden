@@ -5,6 +5,7 @@ use crossterm::event::{self, Event, poll};
 use notify::{EventKind, FsEventWatcher, RecursiveMode, Watcher};
 use ratatui::Frame;
 
+use crate::views::map_view::{draw_map_view, handle_key_event_map_view};
 use crate::{
     SOLUTION_PATH,
     api::Result,
@@ -61,13 +62,13 @@ fn setup_file_watcher(
 fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
     match app.current_view {
         crate::app::View::ChallengeScreen => handle_key_event_challenge_view(key, app),
-        crate::app::View::MapScreen => todo!(),
+        crate::app::View::MapScreen => handle_key_event_map_view(key, app),
     }
 }
 
 fn draw_logic(frame: &mut Frame, app: &mut App) {
     match app.current_view {
         crate::app::View::ChallengeScreen => draw_challenge_view(frame, app),
-        crate::app::View::MapScreen => todo!(),
+        crate::app::View::MapScreen => draw_map_view(frame, app),
     }
 }
