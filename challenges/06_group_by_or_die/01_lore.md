@@ -1,4 +1,4 @@
-*The dim hum of fluorescent crystals echoes through the cubical corridors. A ragged old man, beard like frayed ethernet cords, hobbles forward on a dull oak staff that sparks occasionally with outdated magic. He squints at you, grinning with too many teeth and too much enthusiasm.*
+*The dim hum of fluorescent crystals echoes through the cubical corridors. A ragged old man, beard like frayed ethernet cords, hobbles forward over a weatherd oak staff that dimly sparks every so often. He squints at you, grinning with too many teeth and too much enthusiasm.*
 
 "Ahh! A fresh traveler, lost in this mystic-corporate maze of quarterly despair! Welcome, welcome, brave soul!" he cackles, tapping his staff against a cube-wall. The wall flickers with spreadsheets.
 
