@@ -1,10 +1,5 @@
-use std::fs::read_to_string;
-
 use crate::{
-    api::{
-        ChallengeError, Result, assess_db_condition, delete_db_file, handle_db_condition,
-        read_instructions_file, read_lore_file, read_solution_file,
-    },
+    api::{ChallengeError, Result, delete_db_file},
     app::App,
     tui::tui_loop,
 };
@@ -23,7 +18,8 @@ pub static TEST_SQL_PATH: &str = "04_test.sql";
 pub static SOLUTION_PATH: &str = "solution.sql";
 
 fn main() -> Result<()> {
-    match run_program() {
+    let base_dir = "challenges/01_strongest_cubical";
+    match run_program(base_dir) {
         Ok(mut app) => tui_loop(&mut app),
         Err(ChallengeError::MigrationFailed) => {
             eprintln!("❌ sqlite3 failed to apply migration");
@@ -37,14 +33,8 @@ fn main() -> Result<()> {
     }
 }
 
-fn run_program() -> Result<App> {
-    let level = "lvl 1 - Strongest Cubical".to_string();
-    let lore = read_lore_file();
-    let instructions = read_instructions_file();
-    let output = handle_db_condition(assess_db_condition(DB_PATH)?)?;
-    let solution = read_solution_file();
-
-    let app = App::new(level, lore, instructions, output, solution);
-
+fn run_program(challenge_dir: &str) -> Result<App> {
+    let mut app = App::from_dir(challenge_dir);
+    app.assess_db()?;
     Ok(app)
 }

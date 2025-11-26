@@ -1,22 +1,22 @@
 use rusqlite::{Connection, OptionalExtension};
+use std::fs::File;
 use std::process::Command;
 use std::{fs::read_to_string, path::Path};
 use thiserror::Error;
 
 use crate::{
-    DB_PATH, MIGRATION_PATH, SOLUTION_PATH,
+    DB_PATH, MIGRATION_PATH,
     evaluation::evaluate_users_solution,
     presenter::{db_created_string, evaluation_to_string, instructions_string},
 };
-use crate::{INSTRUCTIONS_PATH, LORE_PATH};
 
 pub fn handle_db_condition(state: ChallengeState) -> Result<String> {
     match state {
-        ChallengeState::MissingDb => {
-            create_db()?;
-            Ok(db_created_string())
+        ChallengeState::MissingDb(base_dir) => {
+            create_db(&base_dir)?;
+            Ok(db_created_string(&base_dir))
         }
-        ChallengeState::NotAttempted => Ok(instructions_string()),
+        ChallengeState::NotAttempted(base_dir) => Ok(instructions_string(&base_dir)),
         ChallengeState::Attempted(conn) => {
             let report = evaluate_users_solution(&conn)?;
             Ok(evaluation_to_string(&report))
@@ -24,9 +24,10 @@ pub fn handle_db_condition(state: ChallengeState) -> Result<String> {
     }
 }
 
-pub fn assess_db_condition(db_path: &str) -> Result<ChallengeState> {
+pub fn assess_db_condition(base_dir: &str) -> Result<ChallengeState> {
+    let db_path = &format!("{base_dir}/{DB_PATH}");
     if !Path::new(db_path).exists() {
-        return Ok(ChallengeState::MissingDb);
+        return Ok(ChallengeState::MissingDb(base_dir.to_string()));
     }
 
     let conn = Connection::open(db_path)?;
@@ -34,12 +35,12 @@ pub fn assess_db_condition(db_path: &str) -> Result<ChallengeState> {
     if was_challenge_attempted(&conn)? {
         return Ok(ChallengeState::Attempted(conn));
     }
-    Ok(ChallengeState::NotAttempted)
+    Ok(ChallengeState::NotAttempted(base_dir.to_string()))
 }
 
 pub enum ChallengeState {
-    MissingDb,
-    NotAttempted,
+    MissingDb(String),
+    NotAttempted(String),
     Attempted(Connection),
 }
 
@@ -68,28 +69,32 @@ pub fn delete_db_file(db_path_str: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn read_solution_file() -> String {
-    read_to_string(SOLUTION_PATH).expect(&format!("Unable to read {SOLUTION_PATH}."))
+pub fn read_solution_file(solution_path: &str) -> String {
+    if !Path::new(solution_path).exists() {
+        File::create(solution_path).expect(&format!("Couldn't create file {solution_path}"));
+    }
+    read_to_string(solution_path).expect(&format!("Unable to read {solution_path}."))
 }
 
-pub fn read_instructions_file() -> String {
-    read_to_string(INSTRUCTIONS_PATH).expect(&format!("Unable to read {INSTRUCTIONS_PATH}."))
+pub fn read_instructions_file(instruction_path: &str) -> String {
+    read_to_string(instruction_path).expect(&format!("Unable to read {instruction_path}."))
 }
 
-pub fn read_lore_file() -> String {
-    read_to_string(LORE_PATH).expect(&format!("Unable to read {LORE_PATH}."))
+pub fn read_lore_file(lore_path: &str) -> String {
+    read_to_string(lore_path).expect(&format!("Unable to read {lore_path}."))
 }
 
-fn create_db() -> Result<()> {
-    if !Path::new(MIGRATION_PATH).exists() {
+fn create_db(base_dir: &str) -> Result<()> {
+    let migration_path = format!("{base_dir}/{MIGRATION_PATH}");
+    if !Path::new(&migration_path).exists() {
         return Err(ChallengeError::MigrationFileMissing(
-            MIGRATION_PATH.to_string(),
+            migration_path.to_string(),
         ));
     }
 
     let status = Command::new("sqlite3")
         .arg(DB_PATH)
-        .arg(format!(".read {}", MIGRATION_PATH))
+        .arg(format!(".read {}", migration_path))
         .status()?;
 
     if !status.success() {
@@ -129,18 +134,20 @@ mod tests {
     fn test_missing_database() {
         let temp_dir = setup_temp_db_dir();
         let non_existent_path = temp_dir.path().join("nonexistent.db");
+        let _blah = "hi".to_string();
 
         // Temporarily override DB_PATH for this test
         // Note: This assumes DB_PATH can be mocked or you use dependency injection
         let result = assess_db_condition(non_existent_path.to_str().unwrap()).unwrap();
 
-        assert!(matches!(result, ChallengeState::MissingDb));
+        assert!(matches!(result, ChallengeState::MissingDb(_blah)));
     }
 
     #[test]
     fn test_not_attempted() {
         let temp_dir = tempfile::tempdir().unwrap();
         let db_path = temp_dir.path().join("test.db");
+        let _blah = "ignored".to_string();
 
         // populate_db(create_monster_table_sql)
         let conn = Connection::open(&db_path).unwrap();
@@ -152,7 +159,7 @@ mod tests {
         drop(conn);
 
         let result = assess_db_condition(db_path.to_str().unwrap()).unwrap();
-        assert!(matches!(result, ChallengeState::NotAttempted));
+        assert!(matches!(result, ChallengeState::NotAttempted(_blah)));
     }
 
     #[test]

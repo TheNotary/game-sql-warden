@@ -1,7 +1,16 @@
 use ratatui::widgets::ScrollbarState;
 
+use crate::{
+    INSTRUCTIONS_PATH, LORE_PATH, Result, SOLUTION_PATH,
+    api::{
+        assess_db_condition, handle_db_condition, read_instructions_file, read_lore_file,
+        read_solution_file,
+    },
+};
+
 #[derive(Default)]
 pub struct App {
+    pub base_dir: String,
     pub level: String,
     pub output: String,
     pub solution: String,
@@ -18,17 +27,27 @@ impl App {
         level: String,
         lore: String,
         instructions: String,
-        output: String,
         solution: String,
+        base_dir: String,
     ) -> Self {
         Self {
             level,
             lore,
             instructions,
-            output,
             solution,
+            base_dir,
             ..Default::default()
         }
+    }
+
+    pub(crate) fn from_dir(base_dir: &str) -> App {
+        let level = "lvl 1 - Strongest Cubical".to_string();
+
+        let lore = read_lore_file(&format!("{base_dir}/{LORE_PATH}"));
+        let instructions = read_instructions_file(&format!("{base_dir}/{INSTRUCTIONS_PATH}"));
+        let solution = read_solution_file(&format!("{base_dir}/{SOLUTION_PATH}"));
+
+        Self::new(level, lore, instructions, solution, base_dir.to_string())
     }
 
     pub(crate) fn scroll_up(&mut self) {
@@ -47,6 +66,18 @@ impl App {
 
     pub(crate) fn cycle_right_pane(&mut self) {
         self.right_pane_mode = self.right_pane_mode.next();
+    }
+
+    pub(crate) fn assess_db(&mut self) -> Result<()> {
+        let base_dir = &self.base_dir;
+        self.output = handle_db_condition(assess_db_condition(base_dir)?)?;
+        Ok(())
+    }
+
+    pub(crate) fn reload_solution_file(&mut self) {
+        let mut solution_path = self.base_dir.to_string();
+        solution_path.push_str(&SOLUTION_PATH);
+        self.solution = read_solution_file(&solution_path);
     }
 }
 

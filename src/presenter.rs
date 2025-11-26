@@ -2,7 +2,6 @@ use crate::DB_PATH;
 use crate::evaluation::EvaluationResult;
 use std::fmt::{self, Write};
 
-// FIXME: Move to it's own crate
 pub trait PushLine {
     fn push_line(&mut self, args: fmt::Arguments);
 }
@@ -61,24 +60,24 @@ pub fn evaluation_to_string(result: &EvaluationResult) -> String {
     out
 }
 
-pub fn db_created_string() -> String {
+pub fn db_created_string(base_dir: &str) -> String {
     let mut out = String::new();
 
     push_line!(
         out,
-        "🧱 {DB_PATH} not found — constructing the Cubical Dungeon..."
+        "🧱 {base_dir}/{DB_PATH} not found — constructing the Cubical Dungeon..."
     );
     push_line!(out, "");
     push_line!(out, "✅ Dungeon constructed! database.db is ready.");
     push_line!(out, "To explore the dungeon manually:");
-    push_line!(out, "  sqlite3 {DB_PATH}");
+    push_line!(out, "  sqlite3 {base_dir}/{DB_PATH}");
     push_line!(out, "Inside SQLite, view the schema with:");
     push_line!(out, "  .schema");
 
     out
 }
 
-pub fn instructions_string() -> String {
+pub fn instructions_string(base_dir: &str) -> String {
     let mut out = String::new();
 
     push_line!(
@@ -89,7 +88,7 @@ pub fn instructions_string() -> String {
     push_line!(out, "  CREATE VIEW strongest_monsters AS ... ;");
     push_line!(out, "");
     push_line!(out, "To inspect the database schema:");
-    push_line!(out, "  sqlite3 {DB_PATH}");
+    push_line!(out, "  sqlite3 {base_dir}/{DB_PATH}");
     push_line!(out, "  .schema");
 
     out

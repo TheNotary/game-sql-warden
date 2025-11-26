@@ -3,7 +3,7 @@ use std::sync::mpsc::{Receiver, RecvTimeoutError, channel};
 use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, poll};
-use notify::{EventKind, FsEventWatcher, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{EventKind, FsEventWatcher, RecursiveMode, Watcher};
 use ratatui::style::{Color, Stylize};
 use ratatui::{
     Frame,
@@ -13,11 +13,9 @@ use ratatui::{
 };
 
 use crate::SOLUTION_PATH;
-use crate::api::read_solution_file;
 use crate::app::RightPaneMode;
 use crate::{
-    DB_PATH,
-    api::{Result, assess_db_condition, handle_db_condition},
+    api::Result,
     app::{App, LeftPaneMode},
 };
 
@@ -29,7 +27,7 @@ enum EventResult {
 
 pub fn tui_loop(app: &mut App) -> Result<()> {
     let mut terminal = ratatui::init();
-    let (_watcher, rx) = setup_file_watcher().expect("COMPUTER!");
+    let (_watcher, rx) = setup_file_watcher(&app.base_dir).expect("COMPUTER!");
 
     loop {
         terminal.draw(|frame| draw_logic(frame, app))?;
@@ -49,7 +47,7 @@ pub fn tui_loop(app: &mut App) -> Result<()> {
         match rx.recv_timeout(Duration::from_millis(10)) {
             Ok(Ok(event)) => {
                 if let EventKind::Modify(_) = event.kind {
-                    app.solution = read_solution_file();
+                    app.reload_solution_file();
                 }
             }
             Ok(Err(e)) => println!("Watcher error: {:?}", e),
@@ -63,11 +61,13 @@ pub fn tui_loop(app: &mut App) -> Result<()> {
     Ok(())
 }
 
-fn setup_file_watcher() -> notify::Result<(FsEventWatcher, Receiver<notify::Result<notify::Event>>)>
-{
+fn setup_file_watcher(
+    base_dir: &str,
+) -> notify::Result<(FsEventWatcher, Receiver<notify::Result<notify::Event>>)> {
+    let solution_path = format!("{base_dir}/{SOLUTION_PATH}");
     let (tx, rx) = channel();
     let mut watcher = notify::recommended_watcher(tx)?;
-    watcher.watch(SOLUTION_PATH.as_ref(), RecursiveMode::NonRecursive)?;
+    watcher.watch(solution_path.as_ref(), RecursiveMode::NonRecursive)?;
     Ok((watcher, rx))
 }
 
@@ -95,13 +95,8 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
         }
         // Test solution.sql
         KeyCode::Enter => {
-            if let Ok(output) = assess_db_condition(DB_PATH).and_then(handle_db_condition) {
-                app.output = output;
-            } else {
-                app.output =
-                    "Error: Something went wrong assessing your solution and the database =/"
-                        .to_string();
-            }
+            app.assess_db()
+                .expect("Error: Something went wrong assessing your solution and the database =/");
             app.right_pane_mode = RightPaneMode::Output;
         }
         // Enter SQLite Console
@@ -212,19 +207,19 @@ pub fn run_sqlite() -> std::result::Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn run_nano_lol() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    let mut child = Command::new("nano")
-        .arg("solution.sql")
-        .stdin(Stdio::inherit())
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .spawn()?;
+// fn run_nano_lol() -> std::result::Result<(), Box<dyn std::error::Error>> {
+//     let mut child = Command::new("nano")
+//         .arg("solution.sql")
+//         .stdin(Stdio::inherit())
+//         .stdout(Stdio::inherit())
+//         .stderr(Stdio::inherit())
+//         .spawn()?;
 
-    // Wait until user exits with .quit or CTRL+D
-    child.wait()?;
+//     // Wait until user exits with .quit or CTRL+D
+//     child.wait()?;
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 fn run_vi() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut child = Command::new("vi")
