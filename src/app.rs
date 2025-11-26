@@ -4,20 +4,29 @@ use ratatui::widgets::ScrollbarState;
 pub struct App {
     pub level: String,
     pub output: String,
+    pub solution: String,
     pub lore: String,
     pub instructions: String,
     pub left_pane_scroll: usize,
     pub left_pane_scroll_state: ScrollbarState,
     pub left_pane_mode: LeftPaneMode,
+    pub right_pane_mode: RightPaneMode,
 }
 
 impl App {
-    pub fn new(level: String, lore: String, instructions: String, output: String) -> Self {
+    pub fn new(
+        level: String,
+        lore: String,
+        instructions: String,
+        output: String,
+        solution: String,
+    ) -> Self {
         Self {
             level,
             lore,
             instructions,
             output,
+            solution,
             ..Default::default()
         }
     }
@@ -35,6 +44,10 @@ impl App {
     pub(crate) fn cycle_left_pane(&mut self) {
         self.left_pane_mode = self.left_pane_mode.next();
     }
+
+    pub(crate) fn cycle_right_pane(&mut self) {
+        self.right_pane_mode = self.right_pane_mode.next();
+    }
 }
 
 #[derive(Default, Clone, Copy)]
@@ -49,6 +62,22 @@ impl LeftPaneMode {
         match self {
             LeftPaneMode::Lore => LeftPaneMode::Instructions,
             LeftPaneMode::Instructions => LeftPaneMode::Lore,
+        }
+    }
+}
+
+#[derive(Default, Clone, Copy)]
+pub enum RightPaneMode {
+    #[default]
+    Output,
+    Solution,
+}
+
+impl RightPaneMode {
+    pub fn next(self) -> Self {
+        match self {
+            RightPaneMode::Output => RightPaneMode::Solution,
+            RightPaneMode::Solution => RightPaneMode::Output,
         }
     }
 }

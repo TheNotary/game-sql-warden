@@ -10,6 +10,7 @@ use ratatui::{
     widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, Wrap},
 };
 
+use crate::app::RightPaneMode;
 use crate::{
     DB_PATH,
     api::{Result, assess_db_condition, handle_db_condition},
@@ -62,6 +63,10 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
         KeyCode::Tab => {
             app.cycle_left_pane();
         }
+        // Cycle Output/ solution.sql
+        KeyCode::Backspace | KeyCode::Delete => {
+            app.cycle_right_pane();
+        }
         // Test solution.sql
         KeyCode::Enter => {
             if let Ok(output) = assess_db_condition(DB_PATH).and_then(handle_db_condition) {
@@ -71,6 +76,7 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
                     "Error: Something went wrong assessing your solution and the database =/"
                         .to_string();
             }
+            app.right_pane_mode = RightPaneMode::Output;
         }
         // Enter SQLite Console
         KeyCode::Char('/') | KeyCode::Char('.') | KeyCode::Char(',') => {
@@ -95,7 +101,7 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
 pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     let mut controls_lines = vec![];
     let controls_txts = [
-        "‣ [tab] cycle lore/instructions.   ‣ [del] cycle output/solution.",
+        // "‣ [tab] cycle lore/instructions.   ‣ [del] cycle output/solution.",
         "‣ [j/k] scroll the lore.           ‣ [.,/] enter sqlite shell.",
         "‣ [e] edit solution.sql            ‣ [enter] test your solution.",
     ];
@@ -105,7 +111,7 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
 
     use Constraint::{Fill, Length, Min};
 
-    let vertical = Layout::vertical([Length(3), Min(0), Length(5)]);
+    let vertical = Layout::vertical([Length(3), Min(0), Length(4)]);
     let [title_area, main_area, controls_area] = vertical.areas(frame.area());
     let horizontal = Layout::horizontal([Fill(1); 2]);
     let [lore_area, output_area] = horizontal.areas(main_area);
@@ -115,9 +121,18 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
         LeftPaneMode::Instructions => ("INSTRUCTIONS", app.instructions.clone()),
     };
 
+    let (right_pane_title, right_pane_content) = match app.right_pane_mode {
+        RightPaneMode::Output => ("OUTPUT", app.output.clone()),
+        RightPaneMode::Solution => ("SOLUTION", app.solution.clone()),
+    };
+
     let title_block = Block::bordered().title(Line::from("STAGE").centered());
-    let right_page_block = Block::bordered().title("OUTPUT");
-    let left_pane_block = Block::bordered().title(left_pane_title);
+    let left_pane_block = Block::bordered()
+        .title(left_pane_title)
+        .title_bottom(Line::from(" [tab] cycle lore/instructions ").centered());
+    let right_page_block = Block::bordered()
+        .title(right_pane_title)
+        .title_bottom(Line::from(" [del] cycle output/solution. ").centered());
     let controls_block = Block::bordered().title(Line::from("CONTROLS").centered());
 
     let left_pane_text = Paragraph::new(left_pane_content)
@@ -125,6 +140,11 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
         .wrap(Wrap { trim: true })
         .bg(Color::Gray)
         .scroll((app.left_pane_scroll as u16, 0));
+
+    let right_pane_text = Paragraph::new(right_pane_content)
+        .block(right_page_block)
+        .bg(Color::Gray)
+        .wrap(Wrap { trim: true });
 
     frame.render_stateful_widget(
         Scrollbar::new(ScrollbarOrientation::VerticalRight)
@@ -137,11 +157,6 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     let title_text = Paragraph::new(app.level.clone())
         .block(title_block)
         .centered()
-        .bg(Color::Gray)
-        .wrap(Wrap { trim: true });
-
-    let right_pane_text = Paragraph::new(app.output.clone())
-        .block(right_page_block)
         .bg(Color::Gray)
         .wrap(Wrap { trim: true });
 
