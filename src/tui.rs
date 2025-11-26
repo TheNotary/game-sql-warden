@@ -2,6 +2,7 @@ use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use crossterm::event::{self, Event, KeyCode, poll};
+use ratatui::style::{Color, Stylize};
 use ratatui::{
     Frame,
     layout::{Constraint, Layout},
@@ -27,7 +28,7 @@ pub fn tui_loop(app: &mut App) -> Result<()> {
     loop {
         terminal.draw(|frame| draw_logic(frame, app))?;
 
-        if poll(Duration::from_millis(0))? {
+        if poll(Duration::from_millis(250))? {
             if let Event::Key(key) = event::read()? {
                 match handle_key_event(key, app) {
                     EventResult::Quit => break,
@@ -46,7 +47,7 @@ pub fn tui_loop(app: &mut App) -> Result<()> {
 fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
     match key.code {
         // Quit
-        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Left | KeyCode::Char('h') => {
+        KeyCode::Char('q') | KeyCode::Esc => {
             return EventResult::Quit;
         }
         // Scroll Down
@@ -81,8 +82,8 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
         // Edit solution.sql
         KeyCode::Char('e') => {
             ratatui::restore();
-            let _ = run_nano_lol();
-            // let _ = run_vi();
+            // let _ = run_nano_lol();
+            let _ = run_vi();
             app.output = String::new();
             return EventResult::ReloadTerminal;
         }
@@ -94,9 +95,9 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
 pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     let mut controls_lines = vec![];
     let controls_txts = [
-        "‣ [tab] cycle lore/instructions.   ‣ [.,/] enter sqlite shell.",
-        "‣ [j/k] scroll the lore.            ‣ [enter] test your solution.",
-        "‣ [e] edit solution.sql",
+        "‣ [tab] cycle lore/instructions.   ‣ [del] cycle output/solution.",
+        "‣ [j/k] scroll the lore.           ‣ [.,/] enter sqlite shell.",
+        "‣ [e] edit solution.sql            ‣ [enter] test your solution.",
     ];
     for controls_txt in controls_txts {
         controls_lines.push(Line::from(controls_txt));
@@ -109,19 +110,20 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     let horizontal = Layout::horizontal([Fill(1); 2]);
     let [lore_area, output_area] = horizontal.areas(main_area);
 
+    let (left_pane_title, left_pane_content) = match app.left_pane_mode {
+        LeftPaneMode::Lore => ("LORE", app.lore.clone()),
+        LeftPaneMode::Instructions => ("INSTRUCTIONS", app.instructions.clone()),
+    };
+
     let title_block = Block::bordered().title(Line::from("STAGE").centered());
     let right_page_block = Block::bordered().title("OUTPUT");
-    let left_pane_block = Block::bordered().title("LORE");
+    let left_pane_block = Block::bordered().title(left_pane_title);
     let controls_block = Block::bordered().title(Line::from("CONTROLS").centered());
-
-    let left_pane_content = match app.left_pane_mode {
-        LeftPaneMode::Lore => app.lore.clone(),
-        LeftPaneMode::Instructions => app.instructions.clone(),
-    };
 
     let left_pane_text = Paragraph::new(left_pane_content)
         .block(left_pane_block)
         .wrap(Wrap { trim: true })
+        .bg(Color::Gray)
         .scroll((app.left_pane_scroll as u16, 0));
 
     frame.render_stateful_widget(
@@ -135,16 +137,18 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     let title_text = Paragraph::new(app.level.clone())
         .block(title_block)
         .centered()
+        .bg(Color::Gray)
         .wrap(Wrap { trim: true });
 
     let right_pane_text = Paragraph::new(app.output.clone())
         .block(right_page_block)
+        .bg(Color::Gray)
         .wrap(Wrap { trim: true });
 
     let controls_text = Paragraph::new(controls_lines)
         .block(controls_block)
-        .centered()
-        .wrap(Wrap { trim: true });
+        .bg(Color::Gray)
+        .centered();
 
     frame.render_widget(title_text, title_area);
     frame.render_widget(right_pane_text, output_area);
