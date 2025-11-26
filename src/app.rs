@@ -20,6 +20,7 @@ pub struct App {
     pub left_pane_scroll_state: ScrollbarState,
     pub left_pane_mode: LeftPaneMode,
     pub right_pane_mode: RightPaneMode,
+    pub current_view: View,
 }
 
 impl App {
@@ -77,6 +78,26 @@ impl App {
         let mut solution_path = self.base_dir.to_string();
         solution_path.push_str(&SOLUTION_PATH);
         self.solution = read_solution_file(&solution_path);
+    }
+
+    pub(crate) fn cycle_view(&mut self) {
+        self.current_view = self.current_view.next();
+    }
+}
+
+#[derive(Default, Clone, Copy)]
+pub enum View {
+    #[default]
+    ChallengeScreen,
+    MapScreen,
+}
+
+impl View {
+    pub fn next(self) -> Self {
+        match self {
+            View::ChallengeScreen => View::MapScreen,
+            View::MapScreen => View::ChallengeScreen,
+        }
     }
 }
 

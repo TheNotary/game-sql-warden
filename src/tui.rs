@@ -76,6 +76,10 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
         KeyCode::Char('q') | KeyCode::Esc => {
             return EventResult::Quit;
         }
+        // Map Screen
+        KeyCode::Char('m') => {
+            app.cycle_view();
+        }
         // Scroll Down
         KeyCode::Char('j') => {
             app.scroll_down();
@@ -119,6 +123,13 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
 }
 
 pub fn draw_logic(frame: &mut Frame, app: &mut App) {
+    match app.current_view {
+        crate::app::View::ChallengeScreen => draw_challenge_view(frame, app),
+        crate::app::View::MapScreen => todo!(),
+    }
+}
+
+fn draw_challenge_view(frame: &mut Frame<'_>, app: &mut App) {
     let mut controls_lines = vec![];
     let controls_txts = [
         // "‣ [tab] cycle lore/instructions.   ‣ [del] cycle output/solution.",
