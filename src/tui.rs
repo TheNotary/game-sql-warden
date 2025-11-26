@@ -5,13 +5,21 @@ use crossterm::event::{self, Event, poll};
 use notify::{EventKind, FsEventWatcher, RecursiveMode, Watcher};
 use ratatui::Frame;
 
-use crate::views::map_view::{draw_map_view, handle_key_event_map_view};
 use crate::{
     SOLUTION_PATH,
     api::Result,
     app::App,
-    views::challenge_view::{EventResult, draw_challenge_view, handle_key_event_challenge_view},
+    views::{
+        challenge_keybinds::handle_key_event_challenge_view, challenge_view::draw_challenge_view,
+        map_keybinds::handle_key_event_map_view, map_view::draw_map_view,
+    },
 };
+
+pub enum EventResult {
+    Quit,
+    Loop,
+    ReloadTerminal,
+}
 
 pub fn tui_loop(app: &mut App) -> Result<()> {
     let mut terminal = ratatui::init();
