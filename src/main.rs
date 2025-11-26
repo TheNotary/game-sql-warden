@@ -9,6 +9,7 @@ mod app;
 mod evaluation;
 mod presenter;
 mod tui;
+mod views;
 
 pub static DB_PATH: &str = "database.db";
 pub static NAME_PATH: &str = "00_name.txt";
