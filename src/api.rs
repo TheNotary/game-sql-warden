@@ -84,6 +84,10 @@ pub fn read_lore_file(lore_path: &str) -> String {
     read_to_string(lore_path).expect(&format!("Unable to read {lore_path}."))
 }
 
+pub fn read_challenge_name(name_path: &str) -> String {
+    read_to_string(name_path).expect(&format!("Unable to read {name_path}."))
+}
+
 fn create_db(base_dir: &str) -> Result<()> {
     let migration_path = format!("{base_dir}/{MIGRATION_PATH}");
     if !Path::new(&migration_path).exists() {
@@ -93,7 +97,7 @@ fn create_db(base_dir: &str) -> Result<()> {
     }
 
     let status = Command::new("sqlite3")
-        .arg(DB_PATH)
+        .arg(format!("{base_dir}/{DB_PATH}"))
         .arg(format!(".read {}", migration_path))
         .status()?;
 

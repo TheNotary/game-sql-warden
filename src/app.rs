@@ -1,10 +1,10 @@
 use ratatui::widgets::ScrollbarState;
 
 use crate::{
-    INSTRUCTIONS_PATH, LORE_PATH, Result, SOLUTION_PATH,
+    INSTRUCTIONS_PATH, LORE_PATH, NAME_PATH, Result, SOLUTION_PATH,
     api::{
-        assess_db_condition, handle_db_condition, read_instructions_file, read_lore_file,
-        read_solution_file,
+        assess_db_condition, handle_db_condition, read_challenge_name, read_instructions_file,
+        read_lore_file, read_solution_file,
     },
 };
 
@@ -41,8 +41,7 @@ impl App {
     }
 
     pub(crate) fn from_dir(base_dir: &str) -> App {
-        let level = "lvl 1 - Strongest Cubical".to_string();
-
+        let level = read_challenge_name(&format!("{base_dir}/{NAME_PATH}"));
         let lore = read_lore_file(&format!("{base_dir}/{LORE_PATH}"));
         let instructions = read_instructions_file(&format!("{base_dir}/{INSTRUCTIONS_PATH}"));
         let solution = read_solution_file(&format!("{base_dir}/{SOLUTION_PATH}"));

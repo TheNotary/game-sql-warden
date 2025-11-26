@@ -12,11 +12,10 @@ use ratatui::{
     widgets::{Block, Paragraph, Scrollbar, ScrollbarOrientation, Wrap},
 };
 
-use crate::SOLUTION_PATH;
-use crate::app::RightPaneMode;
 use crate::{
+    DB_PATH, SOLUTION_PATH,
     api::Result,
-    app::{App, LeftPaneMode},
+    app::{App, LeftPaneMode, RightPaneMode},
 };
 
 enum EventResult {
@@ -102,7 +101,7 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
         // Enter SQLite Console
         KeyCode::Char('/') | KeyCode::Char('.') | KeyCode::Char(',') => {
             ratatui::restore();
-            let _ = run_sqlite();
+            let _ = run_sqlite(&app.base_dir);
             app.output = String::new();
             return EventResult::ReloadTerminal;
         }
@@ -110,7 +109,7 @@ fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
         KeyCode::Char('e') => {
             ratatui::restore();
             // let _ = run_nano_lol();
-            let _ = run_vi();
+            let _ = run_vi(&app.base_dir);
             app.output = String::new();
             return EventResult::ReloadTerminal;
         }
@@ -192,10 +191,10 @@ pub fn draw_logic(frame: &mut Frame, app: &mut App) {
     frame.render_widget(controls_text, controls_area);
 }
 
-pub fn run_sqlite() -> std::result::Result<(), Box<dyn std::error::Error>> {
+pub fn run_sqlite(base_dir: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("CTRL + D to exit\n");
     let mut child = Command::new("sqlite3")
-        .arg("database.db")
+        .arg(format!("{base_dir}/{DB_PATH}"))
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())
@@ -221,9 +220,9 @@ pub fn run_sqlite() -> std::result::Result<(), Box<dyn std::error::Error>> {
 //     Ok(())
 // }
 
-fn run_vi() -> std::result::Result<(), Box<dyn std::error::Error>> {
+fn run_vi(base_dir: &str) -> std::result::Result<(), Box<dyn std::error::Error>> {
     let mut child = Command::new("vi")
-        .arg("solution.sql")
+        .arg(format!("{base_dir}/{SOLUTION_PATH}"))
         .stdin(Stdio::inherit())
         .stdout(Stdio::inherit())
         .stderr(Stdio::inherit())

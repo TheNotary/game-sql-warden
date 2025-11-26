@@ -11,6 +11,7 @@ mod presenter;
 mod tui;
 
 pub static DB_PATH: &str = "database.db";
+pub static NAME_PATH: &str = "00_name.txt";
 pub static LORE_PATH: &str = "01_lore.md";
 pub static INSTRUCTIONS_PATH: &str = "02_instructions.md";
 pub static MIGRATION_PATH: &str = "03_migration.sql";
@@ -23,10 +24,10 @@ fn main() -> Result<()> {
         Ok(mut app) => tui_loop(&mut app),
         Err(ChallengeError::MigrationFailed) => {
             eprintln!("❌ sqlite3 failed to apply migration");
-            delete_db_file(DB_PATH)
+            delete_db_file(&format!("{base_dir}/{DB_PATH}"))
         }
-        Err(ChallengeError::MigrationFileMissing(_)) => {
-            eprintln!("❌ {MIGRATION_PATH} missing — cannot build {DB_PATH}");
+        Err(ChallengeError::MigrationFileMissing(migration_path)) => {
+            eprintln!("❌ {migration_path} missing — cannot build {base_dir}/{DB_PATH}");
             Ok(())
         }
         Err(e) => Err(e),
