@@ -9,13 +9,46 @@ use crate::{
 };
 
 #[derive(Default)]
-pub struct App {
+pub struct Stage {
     pub base_dir: String,
     pub level: String,
     pub output: String,
     pub solution: String,
     pub lore: String,
     pub instructions: String,
+}
+
+impl Stage {
+    pub fn new(
+        level: String,
+        lore: String,
+        instructions: String,
+        solution: String,
+        base_dir: String,
+    ) -> Self {
+        Self {
+            level,
+            lore,
+            instructions,
+            solution,
+            base_dir,
+            ..Default::default()
+        }
+    }
+
+    pub(crate) fn from_dir(base_dir: &str) -> Self {
+        let level = read_challenge_name(&format!("{base_dir}/{NAME_PATH}"));
+        let lore = read_lore_file(&format!("{base_dir}/{LORE_PATH}"));
+        let instructions = read_instructions_file(&format!("{base_dir}/{INSTRUCTIONS_PATH}"));
+        let solution = read_solution_file(&format!("{base_dir}/{SOLUTION_PATH}"));
+
+        Self::new(level, lore, instructions, solution, base_dir.to_string())
+    }
+}
+
+#[derive(Default)]
+pub struct App {
+    pub stage: Stage,
     pub left_pane_scroll: usize,
     pub left_pane_scroll_state: ScrollbarState,
     pub left_pane_mode: LeftPaneMode,
@@ -26,33 +59,25 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(
-        level: String,
-        lore: String,
-        instructions: String,
-        solution: String,
-        base_dir: String,
-    ) -> Self {
+    pub fn new(stage: Stage) -> Self {
         let map = vec![
-            "                        #  ".chars().collect(),
-            "       ##  ##           #  ".chars().collect(),
-            "      ##  # #           #  ".chars().collect(),
-            "    ###############     #  ".chars().collect(),
-            "    # 1  2        #### #   ".chars().collect(),
-            "  #####  #####      ###    ".chars().collect(),
-            " ##  7#     3#       5#    ".chars().collect(),
-            "      # ######### #####    ".chars().collect(),
-            "      #2#       #4#        ".chars().collect(),
-            "                           ".chars().collect(),
+            "                                      ".chars().collect(),
+            "                              #       ".chars().collect(),
+            "             ##  ##           #       ".chars().collect(),
+            "            ##  # #           #       ".chars().collect(),
+            "          ###############     #       ".chars().collect(),
+            "          # 1  2        #### #        ".chars().collect(),
+            "        #####  #####      ###         ".chars().collect(),
+            "       ##  7#     3#       5#         ".chars().collect(),
+            "            # ######### #####         ".chars().collect(),
+            "            #2#       #4#             ".chars().collect(),
+            "                                      ".chars().collect(),
+            "                                      ".chars().collect(),
         ];
-        let player = (4, 6);
+        let player = (5, 12);
 
         Self {
-            level,
-            lore,
-            instructions,
-            solution,
-            base_dir,
+            stage,
             map,
             player,
             ..Default::default()
@@ -60,12 +85,9 @@ impl App {
     }
 
     pub(crate) fn from_dir(base_dir: &str) -> App {
-        let level = read_challenge_name(&format!("{base_dir}/{NAME_PATH}"));
-        let lore = read_lore_file(&format!("{base_dir}/{LORE_PATH}"));
-        let instructions = read_instructions_file(&format!("{base_dir}/{INSTRUCTIONS_PATH}"));
-        let solution = read_solution_file(&format!("{base_dir}/{SOLUTION_PATH}"));
+        let stage = Stage::from_dir(base_dir);
 
-        Self::new(level, lore, instructions, solution, base_dir.to_string())
+        Self::new(stage)
     }
 
     pub(crate) fn scroll_up(&mut self) {
@@ -87,19 +109,28 @@ impl App {
     }
 
     pub(crate) fn assess_db(&mut self) -> Result<()> {
-        let base_dir = &self.base_dir;
-        self.output = handle_db_condition(assess_db_condition(base_dir)?)?;
+        let base_dir = &self.stage.base_dir;
+        self.stage.output = handle_db_condition(assess_db_condition(base_dir)?)?;
         Ok(())
     }
 
     pub(crate) fn reload_solution_file(&mut self) {
-        let mut solution_path = self.base_dir.to_string();
+        let mut solution_path = self.stage.base_dir.to_string();
         solution_path.push_str(&SOLUTION_PATH);
-        self.solution = read_solution_file(&solution_path);
+        self.stage.solution = read_solution_file(&solution_path);
     }
 
     pub(crate) fn cycle_view(&mut self) {
         self.current_view = self.current_view.next();
+    }
+
+    pub(crate) fn update_current_stage(&self) {
+        // check where player is
+        // check character in map
+        // if it's a number, load that stage
+        // else, clear the stage
+
+        todo!()
     }
 }
 

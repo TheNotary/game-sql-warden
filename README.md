@@ -2,11 +2,21 @@
 
 A game that test's player's SQL knowledge.
 
+
+## TODO
+
+- implement changing level
+  - when you leave the map screen, the challenge get's loaded for the number you were on
+
+- when you open the map screen, cleared levels have their number replaced with an astrisk
+  - Add a global database for tracking level completion
+
+
 ## Compiling to WebAssembly (WASM)
 
 TODO: This is all speculative, the game isn't totally complete yet!  Also I needed Claude to write some of this because I forgot I'm on an old intel machine and I downloaded the wrong wasi-sdk, lol. Delete it you say?  I can't just delete it because it cost me 31 cents!
 
-This project can be compiled to WebAssembly using the `wasm32-wasip1` target. 
+This project can be compiled to WebAssembly using the `wasm32-wasip1` target.
 
 See the `/wasm-loader` folder for the web portion of things.
 

@@ -43,16 +43,16 @@ pub fn handle_key_event_challenge_view(key: event::KeyEvent, app: &mut App) -> E
         // Enter SQLite Console
         KeyCode::Char('/') | KeyCode::Char('.') | KeyCode::Char(',') => {
             ratatui::restore();
-            let _ = run_sqlite(&app.base_dir);
-            app.output = String::new();
+            let _ = run_sqlite(&app.stage.base_dir);
+            app.stage.output = String::new();
             return EventResult::ReloadTerminal;
         }
         // Edit solution.sql
         KeyCode::Char('e') => {
             ratatui::restore();
             // let _ = run_nano_lol();
-            let _ = run_vi(&app.base_dir);
-            app.output = String::new();
+            let _ = run_vi(&app.stage.base_dir);
+            app.stage.output = String::new();
             return EventResult::ReloadTerminal;
         }
         _ => {}

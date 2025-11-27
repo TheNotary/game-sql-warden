@@ -8,6 +8,7 @@ pub fn handle_key_event_map_view(key: event::KeyEvent, app: &mut App) -> EventRe
 
     let target = match key.code {
         KeyCode::Char('q') | KeyCode::Esc | KeyCode::Char('m') => {
+            app.update_current_stage();
             app.cycle_view();
             return EventResult::Loop;
         }

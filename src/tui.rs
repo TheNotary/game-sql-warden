@@ -23,7 +23,7 @@ pub enum EventResult {
 
 pub fn tui_loop(app: &mut App) -> Result<()> {
     let mut terminal = ratatui::init();
-    let (_watcher, rx) = setup_file_watcher(&app.base_dir).expect("COMPUTER!");
+    let (_watcher, rx) = setup_file_watcher(&app.stage.base_dir).expect("COMPUTER!");
 
     loop {
         terminal.draw(|frame| draw_logic(frame, app))?;

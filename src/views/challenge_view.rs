@@ -27,13 +27,13 @@ pub(crate) fn draw_challenge_view(frame: &mut Frame<'_>, app: &mut App) {
     let [lore_area, output_area] = horizontal.areas(main_area);
 
     let (left_pane_title, left_pane_content) = match app.left_pane_mode {
-        LeftPaneMode::Lore => ("LORE", app.lore.clone()),
-        LeftPaneMode::Instructions => ("INSTRUCTIONS", app.instructions.clone()),
+        LeftPaneMode::Lore => ("LORE", app.stage.lore.clone()),
+        LeftPaneMode::Instructions => ("INSTRUCTIONS", app.stage.instructions.clone()),
     };
 
     let (right_pane_title, right_pane_content) = match app.right_pane_mode {
-        RightPaneMode::Output => ("OUTPUT", app.output.clone()),
-        RightPaneMode::Solution => ("SOLUTION", app.solution.clone()),
+        RightPaneMode::Output => ("OUTPUT", app.stage.output.clone()),
+        RightPaneMode::Solution => ("SOLUTION", app.stage.solution.clone()),
     };
 
     let title_block = Block::bordered().title(Line::from("STAGE").centered());
@@ -64,7 +64,7 @@ pub(crate) fn draw_challenge_view(frame: &mut Frame<'_>, app: &mut App) {
         &mut app.left_pane_scroll_state,
     );
 
-    let title_text = Paragraph::new(app.level.clone())
+    let title_text = Paragraph::new(app.stage.level.clone())
         .block(title_block)
         .centered()
         .bg(Color::Gray)
