@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::{collections::HashSet, fs, path::Path};
 
 use ratatui::widgets::ScrollbarState;
 
@@ -122,8 +122,15 @@ impl App {
         self.stage.solution = read_solution_file(&solution_path);
     }
 
-    pub(crate) fn cycle_view(&mut self) {
-        self.current_view = self.current_view.next();
+    pub(crate) fn cycle_view_to_map(&mut self) {
+        // FIXME: I guess we read the database everytime we cycle to the map view?
+        // no no, just keep the struct in memory, and write to disk as it changes
+
+        self.current_view = View::MapScreen;
+    }
+
+    pub(crate) fn cycle_view_to_challenge(&mut self) {
+        self.current_view = View::ChallengeScreen;
     }
 
     pub(crate) fn update_current_stage(&mut self) {
@@ -141,7 +148,7 @@ impl App {
             if let Some(base_dir) = get_path(level) {
                 self.stage = Stage::from_dir(&base_dir);
             }
-            self.current_view = View::ChallengeScreen;
+            self.cycle_view_to_challenge();
         } else {
             self.current_view = View::NoStage;
         }
@@ -177,16 +184,6 @@ pub enum View {
     ChallengeScreen,
     MapScreen,
     NoStage,
-}
-
-impl View {
-    pub fn next(self) -> Self {
-        match self {
-            View::ChallengeScreen => View::MapScreen,
-            View::MapScreen => View::ChallengeScreen,
-            View::NoStage => View::MapScreen,
-        }
-    }
 }
 
 #[derive(Default, Clone, Copy)]

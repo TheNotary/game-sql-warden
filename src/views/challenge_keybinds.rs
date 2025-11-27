@@ -16,7 +16,7 @@ pub fn handle_key_event_challenge_view(key: event::KeyEvent, app: &mut App) -> E
         }
         // Map Screen
         KeyCode::Char('m') => {
-            app.cycle_view();
+            app.cycle_view_to_map();
         }
         // Scroll Down
         KeyCode::Char('j') => {
