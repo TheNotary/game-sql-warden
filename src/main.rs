@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    api::{ChallengeError, Result, delete_db_file},
+    api::{ChallengeError, Result, delete_db_file, get_game_state_from_db, setup_app_db},
     app::{App, Stage},
     tui::tui_loop,
 };
@@ -38,9 +38,9 @@ fn main() -> Result<()> {
 }
 
 fn run_program(challenge_dir: &str) -> Result<App> {
-    // FIXME: I guess we read the database everytime we cycle to the map view?
-    // no no, just keep the struct in memory, and write to disk as it changes
-    let game_state = GameState::new();
+    setup_app_db()?;
+
+    let game_state = get_game_state_from_db()?;
     let stage = Stage::from_dir(challenge_dir);
     let mut app = App::new(stage, game_state);
 
@@ -55,7 +55,14 @@ struct GameState {
 }
 
 impl GameState {
-    pub fn new() -> Self {
+    pub fn new(player: (usize, usize), cleared_levels: HashSet<u32>) -> Self {
+        Self {
+            cleared_levels,
+            player,
+        }
+    }
+
+    pub fn default() -> Self {
         let mut cleared_levels = HashSet::new();
         cleared_levels.insert(3);
         let player = (5, 12);

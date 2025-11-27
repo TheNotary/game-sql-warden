@@ -5,8 +5,9 @@ use ratatui::widgets::ScrollbarState;
 use crate::{
     GameState, INSTRUCTIONS_PATH, LORE_PATH, NAME_PATH, Result, SOLUTION_PATH,
     api::{
-        ActionToTake, ChallengeError, assess_db_condition, handle_db_condition,
-        read_challenge_name, read_instructions_file, read_lore_file, read_solution_file,
+        ActionToTake, ChallengeError, assess_db_condition, clear_level_in_sqlite,
+        handle_db_condition, read_challenge_name, read_instructions_file, read_lore_file,
+        read_solution_file,
     },
 };
 
@@ -102,7 +103,7 @@ impl App {
     #[allow(dead_code)]
     pub(crate) fn from_dir(base_dir: &str) -> App {
         let stage = Stage::from_dir(base_dir);
-        let game_state = GameState::new();
+        let game_state = GameState::default();
 
         Self::new(stage, game_state)
     }
@@ -132,6 +133,7 @@ impl App {
         if let ActionToTake::LevelCleared(_) = action {
             let stage_id = get_stage_id(&self.stage.base_dir)?;
             self.game_state.cleared_levels.insert(stage_id);
+            clear_level_in_sqlite(stage_id)?;
         }
 
         self.stage.output = action.into_output();

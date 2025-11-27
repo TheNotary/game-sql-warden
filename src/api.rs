@@ -1,9 +1,12 @@
 use rusqlite::{Connection, OptionalExtension};
+use std::collections::HashSet;
 use std::fs::File;
+use std::path::PathBuf;
 use std::process::Command;
 use std::{fs::read_to_string, path::Path};
 use thiserror::Error;
 
+use crate::GameState;
 use crate::{
     DB_PATH, MIGRATION_PATH,
     evaluation::evaluate_users_solution,
@@ -82,6 +85,9 @@ pub enum ChallengeError {
 
     #[error("Unable to parse challenge directory name: {0}")]
     InvalidChallengeDir(String),
+
+    #[error("Unable to pull data from App database")]
+    FailedPullingFromAppDb,
 }
 
 pub type Result<T> = std::result::Result<T, ChallengeError>;
@@ -142,6 +148,71 @@ fn was_challenge_attempted(conn: &Connection) -> Result<bool> {
         .query_row([], |row| row.get::<usize, String>(0))
         .optional()?
         .is_some())
+}
+
+pub fn setup_app_db() -> Result<()> {
+    if Path::new(DB_PATH).exists() {
+        return Ok(());
+    }
+
+    let migration_path = PathBuf::from("sql/migrate.sql");
+    let sql_cmd = read_to_string(migration_path)?;
+
+    let conn = Connection::open(DB_PATH).unwrap();
+    conn.execute_batch(&sql_cmd).unwrap();
+    drop(conn);
+    Ok(())
+}
+
+pub fn get_game_state_from_db() -> Result<GameState> {
+    let conn = Connection::open(DB_PATH).unwrap();
+
+    let player = get_player_from_db(&conn)?;
+    let cleared_levels = get_cleared_levels_from_db(&conn)?;
+
+    drop(conn);
+
+    Ok(GameState::new(player, cleared_levels))
+}
+
+pub fn get_player_from_db(conn: &Connection) -> Result<(usize, usize)> {
+    let mut stmt = conn.prepare("SELECT x, y FROM player WHERE id = :id")?;
+
+    if let Ok(row) = stmt.query(&[(":id", "1")])?.next() {
+        if let Some(row) = row {
+            let x: usize = row.get(0)?;
+            let y: usize = row.get(1)?;
+
+            return Ok((x, y));
+        }
+    }
+
+    Err(ChallengeError::FailedPullingFromAppDb)
+}
+
+pub fn get_cleared_levels_from_db(conn: &Connection) -> Result<HashSet<u32>> {
+    let mut cleared_levels: HashSet<u32> = HashSet::new();
+
+    let mut stmt = conn.prepare("SELECT id FROM cleared_levels")?;
+
+    if let Ok(mut rows) = stmt.query(&[(":id", "1")]) {
+        while let Ok(row) = rows.next() {
+            if let Ok(stage_id) = row.expect("COMPUTER!").get(0) {
+                cleared_levels.insert(stage_id);
+            }
+        }
+    }
+
+    Ok(cleared_levels)
+}
+
+pub fn clear_level_in_sqlite(stage_id: u32) -> Result<()> {
+    let conn = Connection::open(DB_PATH).unwrap();
+
+    let mut stmt = conn.prepare("INSERT INTO cleared_levels (id) VALUES (:id)")?;
+
+    stmt.execute(&[(":id", &stage_id.to_string())])?;
+    Ok(())
 }
 
 #[cfg(test)]
