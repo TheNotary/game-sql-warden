@@ -36,6 +36,21 @@ pub fn handle_key_event_challenge_view(key: event::KeyEvent, app: &mut App) -> E
         }
         // Test solution.sql
         KeyCode::Enter => {
+            // if the stage is already cleared, don't touch the db again
+            if app.game_state.cleared_levels.contains(&app.stage.id) {
+                app.right_pane_mode = RightPaneMode::Output;
+                app.stage.output = String::from("You have cleared this stage!");
+                return EventResult::Loop;
+            }
+
+            match app.execute_solution() {
+                Err(err) => {
+                    app.stage.output = format!("Your SQL did not apply well: {}", err);
+                    // app.right_pane_mode = RightPaneMode::Output;
+                    // return EventResult::Loop;
+                }
+                _ => {}
+            }
             app.assess_db()
                 .expect("Error: Something went wrong assessing your solution and the database =/");
             app.right_pane_mode = RightPaneMode::Output;

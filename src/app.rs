@@ -5,7 +5,7 @@ use ratatui::widgets::ScrollbarState;
 use crate::{
     GameState, INSTRUCTIONS_PATH, LORE_PATH, NAME_PATH, Result, SOLUTION_PATH,
     api::{
-        ActionToTake, ChallengeError, assess_db_condition, clear_level_in_sqlite,
+        ActionToTake, ChallengeError, assess_db_condition, clear_level_in_sqlite, execute_solution,
         handle_db_condition, read_challenge_name, read_instructions_file, read_lore_file,
         read_solution_file,
     },
@@ -131,9 +131,11 @@ impl App {
         let action = handle_db_condition(assess_db_condition(base_dir)?)?;
 
         if let ActionToTake::LevelCleared(_) = action {
-            let stage_id = get_stage_id(&self.stage.base_dir)?;
-            self.game_state.cleared_levels.insert(stage_id);
-            clear_level_in_sqlite(stage_id)?;
+            let stage_id = self.stage.id;
+            if !self.game_state.cleared_levels.contains(&stage_id) {
+                self.game_state.cleared_levels.insert(stage_id);
+                clear_level_in_sqlite(stage_id)?;
+            }
         }
 
         self.stage.output = action.into_output();
@@ -142,9 +144,8 @@ impl App {
     }
 
     pub(crate) fn reload_solution_file(&mut self) {
-        let mut solution_path = self.stage.base_dir.to_string();
-        solution_path.push_str(&SOLUTION_PATH);
-        self.stage.solution = read_solution_file(&solution_path);
+        let base_dir = &self.stage.base_dir;
+        self.stage.solution = read_solution_file(&format!("{base_dir}/{SOLUTION_PATH}"));
     }
 
     pub(crate) fn cycle_view_to_map(&mut self) {
@@ -179,6 +180,12 @@ impl App {
     pub fn get_char_under_player(&self) -> char {
         let (r, c) = self.game_state.player;
         self.maze[r][c]
+    }
+
+    pub(crate) fn execute_solution(&self) -> Result<()> {
+        let base_dir = &self.stage.base_dir;
+        let result = execute_solution(base_dir)?;
+        Ok(())
     }
 }
 

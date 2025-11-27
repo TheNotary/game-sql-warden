@@ -8,7 +8,7 @@ use thiserror::Error;
 
 use crate::GameState;
 use crate::{
-    DB_PATH, MIGRATION_PATH,
+    DB_PATH, MIGRATION_PATH, SOLUTION_PATH,
     evaluation::evaluate_users_solution,
     presenter::{db_created_string, evaluation_to_string, instructions_string},
 };
@@ -37,8 +37,8 @@ pub fn handle_db_condition(state: ChallengeState) -> Result<ActionToTake> {
             NoAction(db_created_string(&base_dir))
         }
         NotAttempted(base_dir) => NoAction(instructions_string(&base_dir)),
-        Attempted(conn) => {
-            let report = evaluate_users_solution(&conn)?;
+        Attempted(base_dir, conn) => {
+            let report = evaluate_users_solution(&conn, &base_dir)?;
 
             if report.all_correct {
                 LevelCleared(evaluation_to_string(&report))
@@ -58,7 +58,7 @@ pub fn assess_db_condition(base_dir: &str) -> Result<ChallengeState> {
     let conn = Connection::open(db_path)?;
 
     if was_challenge_attempted(&conn)? {
-        return Ok(ChallengeState::Attempted(conn));
+        return Ok(ChallengeState::Attempted(base_dir.to_string(), conn));
     }
     Ok(ChallengeState::NotAttempted(base_dir.to_string()))
 }
@@ -66,7 +66,7 @@ pub fn assess_db_condition(base_dir: &str) -> Result<ChallengeState> {
 pub enum ChallengeState {
     MissingDb(String),
     NotAttempted(String),
-    Attempted(Connection),
+    Attempted(String, Connection),
 }
 
 #[derive(Error, Debug)]
@@ -144,10 +144,9 @@ fn was_challenge_attempted(conn: &Connection) -> Result<bool> {
         "SELECT name FROM sqlite_master WHERE type='view' AND name='strongest_monsters';",
     )?;
 
-    Ok(stmt
-        .query_row([], |row| row.get::<usize, String>(0))
-        .optional()?
-        .is_some())
+    let result = stmt.query_row([], |row| row.get::<usize, String>(0));
+
+    Ok(result.optional()?.is_some())
 }
 
 pub fn setup_app_db() -> Result<()> {
@@ -195,11 +194,11 @@ pub fn get_cleared_levels_from_db(conn: &Connection) -> Result<HashSet<u32>> {
 
     let mut stmt = conn.prepare("SELECT id FROM cleared_levels")?;
 
-    if let Ok(mut rows) = stmt.query(&[(":id", "1")]) {
-        while let Ok(row) = rows.next() {
-            if let Ok(stage_id) = row.expect("COMPUTER!").get(0) {
-                cleared_levels.insert(stage_id);
-            }
+    let cleared_stages = stmt.query_map([], |row| row.get::<usize, u32>(0))?;
+
+    for stage_id in cleared_stages {
+        if let Ok(stage_id) = stage_id {
+            cleared_levels.insert(stage_id);
         }
     }
 
@@ -212,6 +211,17 @@ pub fn clear_level_in_sqlite(stage_id: u32) -> Result<()> {
     let mut stmt = conn.prepare("INSERT INTO cleared_levels (id) VALUES (:id)")?;
 
     stmt.execute(&[(":id", &stage_id.to_string())])?;
+    Ok(())
+}
+
+pub fn execute_solution(base_dir: &str) -> Result<()> {
+    let solution_path = PathBuf::from(&format!("{base_dir}/{SOLUTION_PATH}"));
+    let solution_cmd = read_to_string(solution_path)?;
+
+    let conn = Connection::open(format!("{base_dir}/{DB_PATH}")).unwrap();
+    let mut stmt = conn.prepare(&solution_cmd)?;
+    stmt.raw_execute()?;
+
     Ok(())
 }
 

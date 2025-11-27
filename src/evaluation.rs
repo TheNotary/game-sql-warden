@@ -16,8 +16,9 @@ pub struct EvaluationResult {
     pub all_correct: bool,
 }
 
-pub fn evaluate_users_solution(conn: &Connection) -> Result<EvaluationResult> {
-    let test_sql = read_to_string(TEST_SQL_PATH).expect("Could not read test.sql");
+pub fn evaluate_users_solution(conn: &Connection, base_dir: &str) -> Result<EvaluationResult> {
+    let test_sql =
+        read_to_string(format!("{base_dir}/{TEST_SQL_PATH}")).expect("Could not read test.sql");
 
     let mut stmt = conn.prepare(&test_sql)?;
     let rows_iter = stmt.query_map([], |row| {
