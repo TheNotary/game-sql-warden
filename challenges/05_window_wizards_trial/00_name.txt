@@ -1,1 +1,1 @@
-lvl 5 - The Window Wizard’s Trial (Window functions, ranking, partitioning)
+The Window Wizard’s Trial (Window functions, ranking, partitioning)

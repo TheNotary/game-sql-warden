@@ -5,14 +5,15 @@ use ratatui::widgets::ScrollbarState;
 use crate::{
     GameState, INSTRUCTIONS_PATH, LORE_PATH, NAME_PATH, Result, SOLUTION_PATH,
     api::{
-        assess_db_condition, handle_db_condition, read_challenge_name, read_instructions_file,
-        read_lore_file, read_solution_file,
+        ActionToTake, ChallengeError, assess_db_condition, handle_db_condition,
+        read_challenge_name, read_instructions_file, read_lore_file, read_solution_file,
     },
 };
 
 #[derive(Default)]
 pub struct Stage {
     pub base_dir: String,
+    pub id: u32,
     pub level: String,
     pub output: String,
     pub solution: String,
@@ -22,6 +23,7 @@ pub struct Stage {
 
 impl Stage {
     pub fn new(
+        id: u32,
         level: String,
         lore: String,
         instructions: String,
@@ -29,6 +31,7 @@ impl Stage {
         base_dir: String,
     ) -> Self {
         Self {
+            id,
             level,
             lore,
             instructions,
@@ -43,8 +46,19 @@ impl Stage {
         let lore = read_lore_file(&format!("{base_dir}/{LORE_PATH}"));
         let instructions = read_instructions_file(&format!("{base_dir}/{INSTRUCTIONS_PATH}"));
         let solution = read_solution_file(&format!("{base_dir}/{SOLUTION_PATH}"));
+        let id = match get_stage_id(base_dir) {
+            Ok(id) => id,
+            Err(_) => 0,
+        };
 
-        Self::new(level, lore, instructions, solution, base_dir.to_string())
+        Self::new(
+            id,
+            level,
+            lore,
+            instructions,
+            solution,
+            base_dir.to_string(),
+        )
     }
 }
 
@@ -113,7 +127,15 @@ impl App {
 
     pub(crate) fn assess_db(&mut self) -> Result<()> {
         let base_dir = &self.stage.base_dir;
-        self.stage.output = handle_db_condition(assess_db_condition(base_dir)?)?;
+        let action = handle_db_condition(assess_db_condition(base_dir)?)?;
+
+        if let ActionToTake::LevelCleared(_) = action {
+            let stage_id = get_stage_id(&self.stage.base_dir)?;
+            self.game_state.cleared_levels.insert(stage_id);
+        }
+
+        self.stage.output = action.into_output();
+
         Ok(())
     }
 
@@ -174,6 +196,21 @@ fn get_path(n: u32) -> Option<String> {
     }
 
     None
+}
+
+// this is soooo bad still
+fn get_stage_id(base_path: &str) -> Result<u32> {
+    if let Some(challenge_dir) = base_path.strip_prefix("challenges/") {
+        let digits: String = challenge_dir.chars().take(2).collect();
+
+        if digits.len() == 2 {
+            if let Ok(stage_id) = digits.parse::<u32>() {
+                return Ok(stage_id);
+            }
+        }
+    }
+
+    Err(ChallengeError::InvalidChallengeDir(base_path.into()))
 }
 
 #[derive(Default, Clone, Copy)]

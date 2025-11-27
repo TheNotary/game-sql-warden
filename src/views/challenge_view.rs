@@ -36,7 +36,6 @@ pub(crate) fn draw_challenge_view(frame: &mut Frame<'_>, app: &mut App) {
         RightPaneMode::Solution => ("SOLUTION", app.stage.solution.clone()),
     };
 
-    let title_block = Block::bordered().title(Line::from("STAGE").centered());
     let left_pane_block = Block::bordered()
         .title(left_pane_title)
         .title_bottom(Line::from(" [tab] cycle lore/instructions ").centered());
@@ -64,7 +63,10 @@ pub(crate) fn draw_challenge_view(frame: &mut Frame<'_>, app: &mut App) {
         &mut app.left_pane_scroll_state,
     );
 
-    let title_text = Paragraph::new(app.stage.level.clone())
+    let title_block = Block::bordered().title(Line::from("STAGE").centered());
+    let level_name = app.stage.level.clone();
+    let level_id = app.stage.id;
+    let title_text = Paragraph::new(format!("lvl {level_id} - {level_name}"))
         .block(title_block)
         .centered()
         .bg(Color::Gray)

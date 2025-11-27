@@ -10,18 +10,40 @@ use crate::{
     presenter::{db_created_string, evaluation_to_string, instructions_string},
 };
 
-pub fn handle_db_condition(state: ChallengeState) -> Result<String> {
-    match state {
-        ChallengeState::MissingDb(base_dir) => {
-            create_db(&base_dir)?;
-            Ok(db_created_string(&base_dir))
-        }
-        ChallengeState::NotAttempted(base_dir) => Ok(instructions_string(&base_dir)),
-        ChallengeState::Attempted(conn) => {
-            let report = evaluate_users_solution(&conn)?;
-            Ok(evaluation_to_string(&report))
-        }
+pub enum ActionToTake {
+    NoAction(String),
+    LevelCleared(String),
+}
+
+impl ActionToTake {
+    pub(crate) fn into_output(&self) -> String {
+        String::from(match self {
+            Self::LevelCleared(output) => output,
+            Self::NoAction(output) => output,
+        })
     }
+}
+
+pub fn handle_db_condition(state: ChallengeState) -> Result<ActionToTake> {
+    use ActionToTake::*;
+    use ChallengeState::*;
+
+    Ok(match state {
+        MissingDb(base_dir) => {
+            create_db(&base_dir)?;
+            NoAction(db_created_string(&base_dir))
+        }
+        NotAttempted(base_dir) => NoAction(instructions_string(&base_dir)),
+        Attempted(conn) => {
+            let report = evaluate_users_solution(&conn)?;
+
+            if report.all_correct {
+                LevelCleared(evaluation_to_string(&report))
+            } else {
+                NoAction(evaluation_to_string(&report))
+            }
+        }
+    })
 }
 
 pub fn assess_db_condition(base_dir: &str) -> Result<ChallengeState> {
@@ -57,6 +79,9 @@ pub enum ChallengeError {
 
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
+
+    #[error("Unable to parse challenge directory name: {0}")]
+    InvalidChallengeDir(String),
 }
 
 pub type Result<T> = std::result::Result<T, ChallengeError>;

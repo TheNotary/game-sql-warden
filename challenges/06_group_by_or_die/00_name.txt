@@ -1,1 +1,1 @@
-lvl 6 - Group By or Die Tryin (Aggregations, grouping sets)
+Group By or Die Tryin (Aggregations, grouping sets)
