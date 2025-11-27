@@ -29,7 +29,7 @@ pub fn tui_loop(app: &mut App) -> Result<()> {
         terminal.draw(|frame| draw_logic(frame, app))?;
 
         // every 150ms, check for inputs from user
-        if poll(Duration::from_millis(150))? {
+        if poll(Duration::from_millis(50))? {
             if let Event::Key(key) = event::read()? {
                 match handle_key_event(key, app) {
                     EventResult::Quit => break,

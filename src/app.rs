@@ -21,6 +21,8 @@ pub struct App {
     pub left_pane_mode: LeftPaneMode,
     pub right_pane_mode: RightPaneMode,
     pub current_view: View,
+    pub map: Vec<Vec<char>>,
+    pub player: (usize, usize),
 }
 
 impl App {
@@ -31,12 +33,28 @@ impl App {
         solution: String,
         base_dir: String,
     ) -> Self {
+        let map = vec![
+            "                        #  ".chars().collect(),
+            "       ##  ##           #  ".chars().collect(),
+            "      ##  # #           #  ".chars().collect(),
+            "    ###############     #  ".chars().collect(),
+            "    # 1  2        #### #   ".chars().collect(),
+            "  #####  #####      ###    ".chars().collect(),
+            " ##  7#     3#       5#    ".chars().collect(),
+            "      # ######### #####    ".chars().collect(),
+            "      #2#       #4#        ".chars().collect(),
+            "                           ".chars().collect(),
+        ];
+        let player = (4, 6);
+
         Self {
             level,
             lore,
             instructions,
             solution,
             base_dir,
+            map,
+            player,
             ..Default::default()
         }
     }
