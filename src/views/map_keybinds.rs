@@ -9,17 +9,16 @@ pub fn handle_key_event_map_view(key: event::KeyEvent, app: &mut App) -> EventRe
     let target = match key.code {
         KeyCode::Char('q') | KeyCode::Esc | KeyCode::Char('m') => {
             app.update_current_stage();
-            app.cycle_view();
             return EventResult::Loop;
         }
-        KeyCode::Char('h') => (r, c.saturating_sub(1)),
-        KeyCode::Char('l') => (r, c + 1),
-        KeyCode::Char('k') => (r.saturating_sub(1), c),
-        KeyCode::Char('j') => (r + 1, c),
+        KeyCode::Left | KeyCode::Char('h') => (r, c.saturating_sub(1)),
+        KeyCode::Right | KeyCode::Char('l') => (r, c + 1),
+        KeyCode::Up | KeyCode::Char('k') => (r.saturating_sub(1), c),
+        KeyCode::Down | KeyCode::Char('j') => (r + 1, c),
         _ => return EventResult::Loop,
     };
 
-    if app.map[target.0][target.1] != '#' {
+    if app.maze[target.0][target.1] != '#' {
         app.player = target;
     }
 

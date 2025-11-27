@@ -5,6 +5,9 @@ use crossterm::event::{self, Event, poll};
 use notify::{EventKind, FsEventWatcher, RecursiveMode, Watcher};
 use ratatui::Frame;
 
+use crate::app::View;
+use crate::views::no_stage_keybinds::handle_key_no_stage;
+use crate::views::no_stage_view::draw_no_stage_view;
 use crate::{
     SOLUTION_PATH,
     api::Result,
@@ -69,14 +72,16 @@ fn setup_file_watcher(
 
 fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
     match app.current_view {
-        crate::app::View::ChallengeScreen => handle_key_event_challenge_view(key, app),
-        crate::app::View::MapScreen => handle_key_event_map_view(key, app),
+        View::ChallengeScreen => handle_key_event_challenge_view(key, app),
+        View::MapScreen => handle_key_event_map_view(key, app),
+        View::NoStage => handle_key_no_stage(key, app),
     }
 }
 
 fn draw_logic(frame: &mut Frame, app: &mut App) {
     match app.current_view {
-        crate::app::View::ChallengeScreen => draw_challenge_view(frame, app),
-        crate::app::View::MapScreen => draw_map_view(frame, app),
+        View::ChallengeScreen => draw_challenge_view(frame, app),
+        View::MapScreen => draw_map_view(frame, app),
+        View::NoStage => draw_no_stage_view(frame, app),
     }
 }

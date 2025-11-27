@@ -1,3 +1,5 @@
+use std::{fs, path::Path};
+
 use ratatui::widgets::ScrollbarState;
 
 use crate::{
@@ -54,7 +56,7 @@ pub struct App {
     pub left_pane_mode: LeftPaneMode,
     pub right_pane_mode: RightPaneMode,
     pub current_view: View,
-    pub map: Vec<Vec<char>>,
+    pub maze: Vec<Vec<char>>,
     pub player: (usize, usize),
 }
 
@@ -78,7 +80,7 @@ impl App {
 
         Self {
             stage,
-            map,
+            maze: map,
             player,
             ..Default::default()
         }
@@ -124,14 +126,49 @@ impl App {
         self.current_view = self.current_view.next();
     }
 
-    pub(crate) fn update_current_stage(&self) {
+    pub(crate) fn update_current_stage(&mut self) {
         // check where player is
         // check character in map
         // if it's a number, load that stage
         // else, clear the stage
 
-        todo!()
+        let map_char = self.get_char_under_player();
+
+        if map_char.is_numeric() {
+            let level = map_char
+                .to_digit(10)
+                .expect("It was numeric butuuut....dudue");
+            if let Some(base_dir) = get_path(level) {
+                self.stage = Stage::from_dir(&base_dir);
+            }
+            self.current_view = View::ChallengeScreen;
+        } else {
+            self.current_view = View::NoStage;
+        }
     }
+
+    pub fn get_char_under_player(&self) -> char {
+        let (r, c) = self.player;
+        self.maze[r][c]
+    }
+}
+
+fn get_path(n: u32) -> Option<String> {
+    let prefix = format!("{:02}_", n); // zero-pad to two digits + underscore
+    let base = Path::new("challenges");
+
+    // Iterate through entries in `challenges/`
+    for entry in fs::read_dir(base).ok()? {
+        let entry = entry.ok()?;
+        let file_name = entry.file_name();
+        let file_name = file_name.to_string_lossy();
+
+        if file_name.starts_with(&prefix) {
+            return entry.path().to_str().and_then(|s| Some(s.to_string()));
+        }
+    }
+
+    None
 }
 
 #[derive(Default, Clone, Copy)]
@@ -139,6 +176,7 @@ pub enum View {
     #[default]
     ChallengeScreen,
     MapScreen,
+    NoStage,
 }
 
 impl View {
@@ -146,6 +184,7 @@ impl View {
         match self {
             View::ChallengeScreen => View::MapScreen,
             View::MapScreen => View::ChallengeScreen,
+            View::NoStage => View::MapScreen,
         }
     }
 }

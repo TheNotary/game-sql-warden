@@ -30,7 +30,7 @@ pub fn draw_map_view(frame: &mut Frame<'_>, app: &mut App) {
 }
 
 fn render_map(frame: &mut Frame<'_>, map_area: Rect, app: &App) {
-    let mut rendered = app.map.clone();
+    let mut rendered = app.maze.clone();
     let (r, c) = app.player;
     rendered[r][c] = '@';
 
