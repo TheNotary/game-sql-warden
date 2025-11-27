@@ -28,7 +28,7 @@ pub fn tui_loop(app: &mut App) -> Result<()> {
     loop {
         terminal.draw(|frame| draw_logic(frame, app))?;
 
-        // every 150ms, check for inputs from user
+        // every 50ms, check for inputs from user
         if poll(Duration::from_millis(50))? {
             if let Event::Key(key) = event::read()? {
                 match handle_key_event(key, app) {
@@ -39,7 +39,7 @@ pub fn tui_loop(app: &mut App) -> Result<()> {
             }
         }
 
-        // FIXME: Move to function?
+        // FIXME: Move to function? At least clean up?
         match rx.recv_timeout(Duration::from_millis(10)) {
             Ok(Ok(event)) => {
                 if let EventKind::Modify(_) = event.kind {

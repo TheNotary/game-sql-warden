@@ -1,43 +1,16 @@
-# Strongest Cubical
+# SQL Warden
 
-## 🧱 The Cubical Dungeon Guardian Speaks
-
-A dim lantern flickers above rows of perfectly aligned stone cubes.
-From behind one of the cubicles, a hunched figure emerges—half-scribe, half-daemon, all SQL.
-
-“Ahh… a wanderer! You’ve entered the Cubical Dungeon, where data goes to die—or be optimized.
-I am the Warden of Cubes, caretaker of rows and columns long forgotten.
-You seek passage? Then face my challenge.”
-
-He slams a stone tablet onto a slab between you.
-
-“Monsters lurk in each cube. Some weak, some mighty, some too embarrassed to list their hit points.
-Your challenge: for every cube, determine the single strongest monster that dwells within it.
-When you believe you’ve solved this riddle using SQLite… run the Test Ritual to see whether your answer is worthy.”
-
-The Warden fades back into the cubicles, whispering:
-“Migrate wisely, wanderer…”
-
-## 🧩 The Challenge
-
-After running the migrations below, write a query that produces a table with:
-
-    cube_id | cube_name | monster_id | monster_name | hp
-
-…containing the strongest (highest HP) monster in each cube.
-If a cube has no monsters, it should not appear (inner semantics).
-
-Create your solution as a view named strongest_monsters.
-
-
-## Technical Instructions
-
-    sqlite3 test.db < migration.sql
-    sqlite3 test.db
+A game that test's player's SQL knowledge.
 
 ## Compiling to WebAssembly (WASM)
 
-This project can be compiled to WebAssembly using the `wasm32-wasip1` target. The following setup is required:
+TODO: This is all speculative, the game isn't totally complete yet!  Also I needed Claude to write some of this because I forgot I'm on an old intel machine and I downloaded the wrong wasi-sdk, lol. Delete it you say?  I can't just delete it because it cost me 31 cents!
+
+This project can be compiled to WebAssembly using the `wasm32-wasip1` target. 
+
+See the `/wasm-loader` folder for the web portion of things.
+
+The following setup is required:
 
 ### Prerequisites
 
