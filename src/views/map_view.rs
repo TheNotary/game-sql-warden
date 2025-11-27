@@ -30,18 +30,33 @@ pub fn draw_map_view(frame: &mut Frame<'_>, app: &mut App) {
 }
 
 fn render_map(frame: &mut Frame<'_>, map_area: Rect, app: &App) {
-    let mut rendered = app.maze.clone();
-    let (r, c) = app.player;
-    rendered[r][c] = '@';
-
-    let text: String = rendered
-        .iter()
-        .map(|row| row.iter().collect::<String>() + "\n")
-        .collect();
+    let text = process_maze_to_text(app);
 
     let paragraph = Paragraph::new(text)
         .centered()
         .block(Block::default().borders(Borders::ALL));
 
     frame.render_widget(paragraph, map_area);
+}
+
+fn process_maze_to_text(app: &App) -> String {
+    let mut maze = app.maze.clone();
+    let cleared_levels = &app.game_state.cleared_levels;
+
+    // place player in maze
+    let (r, c) = app.game_state.player;
+    maze[r][c] = '@';
+
+    // Format the maze as a string, replacing cleared_levels with a '*' symbol
+    maze.iter()
+        .map(|row| {
+            row.iter()
+                .map(|c| match c.to_digit(10) {
+                    Some(d) if cleared_levels.contains(&d) => '*',
+                    _ => *c,
+                })
+                .collect::<String>()
+        })
+        .collect::<Vec<_>>()
+        .join("\n")
 }

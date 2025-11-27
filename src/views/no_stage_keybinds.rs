@@ -10,6 +10,7 @@ pub fn handle_key_no_stage(key: event::KeyEvent, app: &mut App) -> EventResult {
 
             EventResult::Loop
         }
+        KeyCode::Char('p') => EventResult::Quit,
         _ => EventResult::Loop,
     }
 }

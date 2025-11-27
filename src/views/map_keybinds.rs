@@ -4,7 +4,7 @@ use crate::app::App;
 use crate::tui::EventResult;
 
 pub fn handle_key_event_map_view(key: event::KeyEvent, app: &mut App) -> EventResult {
-    let (r, c) = app.player;
+    let (r, c) = app.game_state.player;
 
     let target = match key.code {
         KeyCode::Char('q') | KeyCode::Esc | KeyCode::Char('m') => {
@@ -19,7 +19,7 @@ pub fn handle_key_event_map_view(key: event::KeyEvent, app: &mut App) -> EventRe
     };
 
     if app.maze[target.0][target.1] != '#' {
-        app.player = target;
+        app.game_state.player = target;
     }
 
     EventResult::Loop

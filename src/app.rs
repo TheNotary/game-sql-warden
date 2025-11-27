@@ -1,9 +1,9 @@
-use std::{collections::HashSet, fs, path::Path};
+use std::{fs, path::Path};
 
 use ratatui::widgets::ScrollbarState;
 
 use crate::{
-    INSTRUCTIONS_PATH, LORE_PATH, NAME_PATH, Result, SOLUTION_PATH,
+    GameState, INSTRUCTIONS_PATH, LORE_PATH, NAME_PATH, Result, SOLUTION_PATH,
     api::{
         assess_db_condition, handle_db_condition, read_challenge_name, read_instructions_file,
         read_lore_file, read_solution_file,
@@ -51,17 +51,17 @@ impl Stage {
 #[derive(Default)]
 pub struct App {
     pub stage: Stage,
+    pub game_state: GameState,
     pub left_pane_scroll: usize,
     pub left_pane_scroll_state: ScrollbarState,
     pub left_pane_mode: LeftPaneMode,
     pub right_pane_mode: RightPaneMode,
     pub current_view: View,
     pub maze: Vec<Vec<char>>,
-    pub player: (usize, usize),
 }
 
 impl App {
-    pub fn new(stage: Stage) -> Self {
+    pub fn new(stage: Stage, game_state: GameState) -> Self {
         let map = vec![
             "                                      ".chars().collect(),
             "                              #       ".chars().collect(),
@@ -72,24 +72,25 @@ impl App {
             "        #####  #####      ###         ".chars().collect(),
             "       ##  7#     3#       5#         ".chars().collect(),
             "            # ######### #####         ".chars().collect(),
-            "            #2#       #4#             ".chars().collect(),
+            "            #6#       #4#             ".chars().collect(),
             "                                      ".chars().collect(),
             "                                      ".chars().collect(),
         ];
-        let player = (5, 12);
 
         Self {
             stage,
+            game_state,
             maze: map,
-            player,
             ..Default::default()
         }
     }
 
+    #[allow(dead_code)]
     pub(crate) fn from_dir(base_dir: &str) -> App {
         let stage = Stage::from_dir(base_dir);
+        let game_state = GameState::new();
 
-        Self::new(stage)
+        Self::new(stage, game_state)
     }
 
     pub(crate) fn scroll_up(&mut self) {
@@ -123,9 +124,6 @@ impl App {
     }
 
     pub(crate) fn cycle_view_to_map(&mut self) {
-        // FIXME: I guess we read the database everytime we cycle to the map view?
-        // no no, just keep the struct in memory, and write to disk as it changes
-
         self.current_view = View::MapScreen;
     }
 
@@ -155,7 +153,7 @@ impl App {
     }
 
     pub fn get_char_under_player(&self) -> char {
-        let (r, c) = self.player;
+        let (r, c) = self.game_state.player;
         self.maze[r][c]
     }
 }
