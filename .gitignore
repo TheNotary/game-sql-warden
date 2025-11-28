@@ -2,3 +2,4 @@ target/
 database.db
 challenges/*.md
 solution.sql
+output.log
