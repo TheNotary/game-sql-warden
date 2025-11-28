@@ -7,7 +7,7 @@ pub fn handle_key_event_map_view(key: event::KeyEvent, app: &mut App) -> EventRe
     let (r, c) = app.game_state.player;
 
     let target = match key.code {
-        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Char('m') => {
+        KeyCode::Char('q') | KeyCode::Esc | KeyCode::Enter | KeyCode::Char('m') => {
             app.update_current_stage();
             return EventResult::Loop;
         }

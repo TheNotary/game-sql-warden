@@ -1,3 +1,5 @@
+DROP VIEW IF EXISTS solution;
+
 CREATE VIEW solution AS
 SELECT name,
   CASE

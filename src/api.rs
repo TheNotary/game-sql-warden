@@ -289,7 +289,7 @@ mod tests {
         drop(conn);
 
         let result = assess_db_condition(db_path.to_str().unwrap()).unwrap();
-        assert!(matches!(result, ChallengeState::Attempted(_)));
+        assert!(matches!(result, ChallengeState::Attempted(..)));
     }
 
     //////////////////////////////////

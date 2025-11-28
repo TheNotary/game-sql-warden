@@ -128,6 +128,13 @@ impl App {
 
     pub(crate) fn assess_db(&mut self) -> Result<()> {
         let base_dir = &self.stage.base_dir;
+
+        // just print the cleared message if the database says wee've cleared it
+        if self.game_state.cleared_levels.contains(&self.stage.id) {
+            self.stage.output = String::from("🏆 You have cleared this stage!");
+            return Ok(());
+        }
+
         let action = handle_db_condition(assess_db_condition(base_dir)?)?;
 
         if let ActionToTake::LevelCleared(_) = action {
