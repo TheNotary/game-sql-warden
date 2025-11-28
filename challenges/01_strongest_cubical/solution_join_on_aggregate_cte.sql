@@ -1,4 +1,4 @@
-CREATE VIEW strongest_monsters AS
+CREATE VIEW solution AS
 WITH max_hp_monsters AS (
     SELECT cube_id, MAX(hp) AS max_hp
       FROM monsters

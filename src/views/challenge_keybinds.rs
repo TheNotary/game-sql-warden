@@ -46,8 +46,8 @@ pub fn handle_key_event_challenge_view(key: event::KeyEvent, app: &mut App) -> E
             match app.execute_solution() {
                 Err(err) => {
                     app.stage.output = format!("Your SQL did not apply well: {}", err);
-                    // app.right_pane_mode = RightPaneMode::Output;
-                    // return EventResult::Loop;
+                    app.right_pane_mode = RightPaneMode::Output;
+                    return EventResult::Loop;
                 }
                 _ => {}
             }

@@ -7,7 +7,7 @@ After running the migrations below, write a query that produces a table with:
 …containing the strongest (highest HP) monster in each cube.
 If a cube has no monsters, it should not appear (inner semantics).
 
-Create your solution as a view named strongest_monsters.
+Create your solution as a view named solution.
 
 ## Technical Instructions
 

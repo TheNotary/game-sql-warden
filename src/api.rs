@@ -10,7 +10,7 @@ use crate::GameState;
 use crate::{
     DB_PATH, MIGRATION_PATH, SOLUTION_PATH,
     evaluation::evaluate_users_solution,
-    presenter::{db_created_string, evaluation_to_string, instructions_string},
+    presenter::{db_created_string, instructions_string},
 };
 
 pub enum ActionToTake {
@@ -38,12 +38,12 @@ pub fn handle_db_condition(state: ChallengeState) -> Result<ActionToTake> {
         }
         NotAttempted(base_dir) => NoAction(instructions_string(&base_dir)),
         Attempted(base_dir, conn) => {
-            let report = evaluate_users_solution(&conn, &base_dir)?;
+            let did_test_pass = evaluate_users_solution(&conn, &base_dir)?;
 
-            if report.all_correct {
-                LevelCleared(evaluation_to_string(&report))
+            if did_test_pass {
+                LevelCleared("Tests passed!".into())
             } else {
-                NoAction(evaluation_to_string(&report))
+                NoAction("Tests didn't go ok, try again!".into())
             }
         }
     })
@@ -140,9 +140,8 @@ fn create_db(base_dir: &str) -> Result<()> {
 }
 
 fn was_challenge_attempted(conn: &Connection) -> Result<bool> {
-    let mut stmt = conn.prepare(
-        "SELECT name FROM sqlite_master WHERE type='view' AND name='strongest_monsters';",
-    )?;
+    let mut stmt =
+        conn.prepare("SELECT name FROM sqlite_master WHERE type='view' AND name='solution';")?;
 
     let result = stmt.query_row([], |row| row.get::<usize, String>(0));
 
@@ -219,8 +218,9 @@ pub fn execute_solution(base_dir: &str) -> Result<()> {
     let solution_cmd = read_to_string(solution_path)?;
 
     let conn = Connection::open(format!("{base_dir}/{DB_PATH}")).unwrap();
-    let mut stmt = conn.prepare(&solution_cmd)?;
-    stmt.raw_execute()?;
+    conn.execute_batch(&solution_cmd)?;
+    // let mut stmt = conn.prepare(&solution_cmd)?;
+    // stmt.raw_execute()?;
 
     Ok(())
 }

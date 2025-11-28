@@ -184,7 +184,7 @@ impl App {
 
     pub(crate) fn execute_solution(&self) -> Result<()> {
         let base_dir = &self.stage.base_dir;
-        let result = execute_solution(base_dir)?;
+        execute_solution(base_dir)?;
         Ok(())
     }
 }

@@ -16,29 +16,13 @@ pub struct EvaluationResult {
     pub all_correct: bool,
 }
 
-pub fn evaluate_users_solution(conn: &Connection, base_dir: &str) -> Result<EvaluationResult> {
-    let test_sql =
-        read_to_string(format!("{base_dir}/{TEST_SQL_PATH}")).expect("Could not read test.sql");
+pub fn evaluate_users_solution(conn: &Connection, base_dir: &str) -> Result<bool> {
+    let test_sql_path = format!("{base_dir}/{TEST_SQL_PATH}");
+    let test_sql = read_to_string(test_sql_path).expect("Could not read test.sql");
 
     let mut stmt = conn.prepare(&test_sql)?;
-    let rows_iter = stmt.query_map([], |row| {
-        Ok(EvaluationRow {
-            cube_id: row.get(0)?,
-            monster_id: row.get(1)?,
-            is_correct: row.get::<_, i64>(2)? == 1,
-        })
-    })?;
 
-    let mut rows = Vec::new();
-    let mut all_correct = true;
+    let result: String = stmt.query_row([], |row| row.get(0))?;
 
-    for row in rows_iter {
-        let row = row?;
-        if !row.is_correct {
-            all_correct = false;
-        }
-        rows.push(row);
-    }
-
-    Ok(EvaluationResult { rows, all_correct })
+    Ok(result == "PASS")
 }
