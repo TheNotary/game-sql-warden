@@ -1,5 +1,4 @@
 use crate::DB_PATH;
-use crate::evaluation::EvaluationResult;
 use std::fmt::{self, Write};
 
 pub trait PushLine {
@@ -18,46 +17,6 @@ macro_rules! push_line {
     ($string:expr, $($arg:tt)*) => {{
         $string.push_line(format_args!($($arg)*));
     }};
-}
-
-pub fn evaluation_to_string(result: &EvaluationResult) -> String {
-    let mut out = String::new();
-
-    push_line!(out, "🔍 Attempt detected! Evaluating your solution...");
-    push_line!(out, "");
-    push_line!(out, "📊 Test Results:");
-
-    for r in &result.rows {
-        if r.is_correct {
-            push_line!(
-                out,
-                " cube {} → monster {} ✔ correct",
-                r.cube_id,
-                r.monster_id
-            );
-        } else {
-            push_line!(
-                out,
-                " cube {} → monster {} ✘ incorrect",
-                r.cube_id,
-                r.monster_id
-            );
-        }
-    }
-
-    push_line!(out, "");
-
-    if result.all_correct {
-        push_line!(
-            out,
-            "🏆 **You have mastered the Cubical Dungeon’s first trial!**"
-        );
-    } else {
-        push_line!(out, "❌ Some answers were incorrect.");
-        push_line!(out, "The Warden mutters: 'Refine your query, wanderer.'");
-    }
-
-    out
 }
 
 pub fn db_created_string(base_dir: &str) -> String {

@@ -39,7 +39,7 @@ pub fn handle_key_event_challenge_view(key: event::KeyEvent, app: &mut App) -> E
             // if the stage is already cleared, don't touch the db again
             if app.game_state.cleared_levels.contains(&app.stage.id) {
                 app.right_pane_mode = RightPaneMode::Output;
-                app.stage.output = String::from("You have cleared this stage!");
+                app.stage.output = String::from("🏆 You have cleared this stage!");
                 return EventResult::Loop;
             }
 

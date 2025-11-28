@@ -41,7 +41,7 @@ pub fn handle_db_condition(state: ChallengeState) -> Result<ActionToTake> {
             let did_test_pass = evaluate_users_solution(&conn, &base_dir)?;
 
             if did_test_pass {
-                LevelCleared("Tests passed!".into())
+                LevelCleared("🏆 Tests passed!".into())
             } else {
                 NoAction("Tests didn't go ok, try again!".into())
             }
