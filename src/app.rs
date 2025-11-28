@@ -1,5 +1,6 @@
 use std::{fs, path::Path};
 
+use log::debug;
 use ratatui::widgets::ScrollbarState;
 
 use crate::{
@@ -155,11 +156,18 @@ impl App {
         self.stage.solution = read_solution_file(&format!("{base_dir}/{SOLUTION_PATH}"));
     }
 
+    pub(crate) fn cycle_view_to_no_stage(&mut self) {
+        debug!("cycling view to NoStage");
+        self.current_view = View::NoStage;
+    }
+
     pub(crate) fn cycle_view_to_map(&mut self) {
+        debug!("cycling view to MapScreen");
         self.current_view = View::MapScreen;
     }
 
     pub(crate) fn cycle_view_to_challenge(&mut self) {
+        debug!("cycling view to ChallengeScreen");
         self.current_view = View::ChallengeScreen;
     }
 
@@ -180,7 +188,7 @@ impl App {
             }
             self.cycle_view_to_challenge();
         } else {
-            self.current_view = View::NoStage;
+            self.cycle_view_to_no_stage();
         }
     }
 

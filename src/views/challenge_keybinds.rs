@@ -1,3 +1,4 @@
+use log::trace;
 use std::process::{Command, Stdio};
 
 use crossterm::event::{self, KeyCode};
@@ -36,6 +37,8 @@ pub fn handle_key_event_challenge_view(key: event::KeyEvent, app: &mut App) -> E
         }
         // Test solution.sql
         KeyCode::Enter => {
+            trace!("Enter key pressed");
+
             // if the stage is already cleared, don't touch the db again
             if app.game_state.cleared_levels.contains(&app.stage.id) {
                 app.right_pane_mode = RightPaneMode::Output;

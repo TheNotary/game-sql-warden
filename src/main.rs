@@ -1,5 +1,7 @@
 use std::collections::HashSet;
 
+use log::info;
+
 use crate::{
     api::{ChallengeError, Result, delete_db_file, get_game_state_from_db, setup_app_db},
     app::{App, Stage},
@@ -22,6 +24,8 @@ pub static TEST_SQL_PATH: &str = "04_test.sql";
 pub static SOLUTION_PATH: &str = "solution.sql";
 
 fn main() -> Result<()> {
+    setup_logger()?;
+
     let base_dir = "challenges/01_strongest_cubical";
     match run_program(base_dir) {
         Ok(mut app) => tui_loop(&mut app),
@@ -71,5 +75,29 @@ impl GameState {
             cleared_levels,
             player,
         }
+    }
+}
+
+fn setup_logger() -> Result<()> {
+    match fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{} {}] {}",
+                record.level(),
+                record.target(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Debug)
+        .chain(fern::log_file("output.log")?)
+        .apply()
+    {
+        Ok(_) => {
+            info!("################");
+            info!("#    BOOTED    #");
+            info!("################");
+            Ok(())
+        }
+        Err(_) => Err(ChallengeError::LoggerInitFailure),
     }
 }

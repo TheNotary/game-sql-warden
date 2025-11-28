@@ -1,5 +1,7 @@
+use log::{debug, error, trace};
 use rusqlite::{Connection, OptionalExtension};
 use std::collections::HashSet;
+use std::fmt::{self, Debug};
 use std::fs::File;
 use std::path::PathBuf;
 use std::process::Command;
@@ -28,12 +30,13 @@ impl ActionToTake {
 }
 
 pub fn handle_db_condition(state: ChallengeState) -> Result<ActionToTake> {
+    debug!("handle_db_condition called with {}", state);
     use ActionToTake::*;
     use ChallengeState::*;
 
     Ok(match state {
         MissingDb(base_dir) => {
-            create_db(&base_dir)?;
+            migrate_challenge_db(&base_dir)?;
             NoAction(db_created_string(&base_dir))
         }
         NotAttempted(base_dir) => NoAction(instructions_string(&base_dir)),
@@ -50,23 +53,39 @@ pub fn handle_db_condition(state: ChallengeState) -> Result<ActionToTake> {
 }
 
 pub fn assess_db_condition(base_dir: &str) -> Result<ChallengeState> {
+    debug!("assess_db_condition was called. base_dir: {base_dir}");
+
     let db_path = &format!("{base_dir}/{DB_PATH}");
     if !Path::new(db_path).exists() {
+        trace!("MissingDB");
         return Ok(ChallengeState::MissingDb(base_dir.to_string()));
     }
 
     let conn = Connection::open(db_path)?;
 
     if was_challenge_attempted(&conn)? {
+        trace!("Attempted");
         return Ok(ChallengeState::Attempted(base_dir.to_string(), conn));
     }
+    trace!("NotAttempted");
     Ok(ChallengeState::NotAttempted(base_dir.to_string()))
 }
 
+#[derive(Debug)]
 pub enum ChallengeState {
     MissingDb(String),
     NotAttempted(String),
     Attempted(String, Connection),
+}
+
+impl fmt::Display for ChallengeState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ChallengeState::MissingDb(path) => write!(f, "MissingDb {path}"),
+            ChallengeState::NotAttempted(path) => write!(f, "NotAttempted {path}"),
+            ChallengeState::Attempted(path, _) => write!(f, "Attempted {path}"),
+        }
+    }
 }
 
 #[derive(Error, Debug)]
@@ -88,6 +107,9 @@ pub enum ChallengeError {
 
     #[error("Unable to pull data from App database")]
     FailedPullingFromAppDb,
+
+    #[error("Something went wrong initializing the logger.")]
+    LoggerInitFailure,
 }
 
 pub type Result<T> = std::result::Result<T, ChallengeError>;
@@ -119,9 +141,13 @@ pub fn read_challenge_name(name_path: &str) -> String {
     read_to_string(name_path).expect(&format!("Unable to read {name_path}."))
 }
 
-fn create_db(base_dir: &str) -> Result<()> {
+// FIXME: When is this used? it depends on the sqlite3 command...
+fn migrate_challenge_db(base_dir: &str) -> Result<()> {
+    debug!("migrate_challenge_db was called with base_dir: {base_dir}");
+
     let migration_path = format!("{base_dir}/{MIGRATION_PATH}");
     if !Path::new(&migration_path).exists() {
+        error!("MigrationFileMissing!: {migration_path}");
         return Err(ChallengeError::MigrationFileMissing(
             migration_path.to_string(),
         ));
@@ -132,7 +158,10 @@ fn create_db(base_dir: &str) -> Result<()> {
         .arg(format!(".read {}", migration_path))
         .status()?;
 
+    debug!("sql3 command complete... wait this is left-over AI slop...");
+
     if !status.success() {
+        error!("MigrationFailed!");
         return Err(ChallengeError::MigrationFailed);
     }
 
@@ -214,10 +243,18 @@ pub fn clear_level_in_sqlite(stage_id: u32) -> Result<()> {
 }
 
 pub fn execute_solution(base_dir: &str) -> Result<()> {
+    trace!("execute_solution called.  base_dir: {base_dir}");
+    let db_path = &format!("{base_dir}/{DB_PATH}");
+
+    if !Path::new(db_path.into()).exists() {
+        trace!("Skipping execute_solution, db_path did not exist: {db_path}");
+        return Ok(());
+    }
+
     let solution_path = PathBuf::from(&format!("{base_dir}/{SOLUTION_PATH}"));
     let solution_cmd = read_to_string(solution_path)?;
 
-    let conn = Connection::open(format!("{base_dir}/{DB_PATH}")).unwrap();
+    let conn = Connection::open(db_path).unwrap();
     conn.execute_batch(&solution_cmd)?;
     // let mut stmt = conn.prepare(&solution_cmd)?;
     // stmt.raw_execute()?;
