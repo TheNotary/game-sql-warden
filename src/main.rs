@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use log::info;
 
 use crate::{
@@ -11,6 +9,7 @@ use crate::{
 mod api;
 mod app;
 mod evaluation;
+mod game;
 mod presenter;
 mod tui;
 mod views;
@@ -50,32 +49,6 @@ fn run_program(challenge_dir: &str) -> Result<App> {
 
     app.assess_db()?;
     Ok(app)
-}
-
-#[derive(Default)]
-struct GameState {
-    player: (usize, usize),
-    cleared_levels: HashSet<u32>,
-}
-
-impl GameState {
-    pub fn new(player: (usize, usize), cleared_levels: HashSet<u32>) -> Self {
-        Self {
-            cleared_levels,
-            player,
-        }
-    }
-
-    pub fn default() -> Self {
-        let mut cleared_levels = HashSet::new();
-        cleared_levels.insert(3);
-        let player = (5, 12);
-
-        Self {
-            cleared_levels,
-            player,
-        }
-    }
 }
 
 fn setup_logger() -> Result<()> {

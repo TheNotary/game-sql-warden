@@ -40,7 +40,7 @@ fn render_map(frame: &mut Frame<'_>, map_area: Rect, app: &App) {
 }
 
 fn process_maze_to_text(app: &App) -> String {
-    let mut maze = app.maze.clone();
+    let mut maze = app.game_state.maze.clone();
     let cleared_levels = &app.game_state.cleared_levels;
 
     // place player in maze

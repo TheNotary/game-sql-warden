@@ -4,12 +4,13 @@ use log::debug;
 use ratatui::widgets::ScrollbarState;
 
 use crate::{
-    GameState, INSTRUCTIONS_PATH, LORE_PATH, NAME_PATH, Result, SOLUTION_PATH,
+    INSTRUCTIONS_PATH, LORE_PATH, NAME_PATH, Result, SOLUTION_PATH,
     api::{
         ActionToTake, ChallengeError, assess_db_condition, clear_level_in_sqlite, execute_solution,
         handle_db_condition, read_challenge_name, read_instructions_file, read_lore_file,
         read_solution_file,
     },
+    game::game_state::GameState,
 };
 
 #[derive(Default)]
@@ -73,30 +74,13 @@ pub struct App {
     pub left_pane_mode: LeftPaneMode,
     pub right_pane_mode: RightPaneMode,
     pub current_view: View,
-    pub maze: Vec<Vec<char>>,
 }
 
 impl App {
     pub fn new(stage: Stage, game_state: GameState) -> Self {
-        let map = vec![
-            "                                      ".chars().collect(),
-            "                              #       ".chars().collect(),
-            "             ##  ##           #       ".chars().collect(),
-            "            ##  # #           #       ".chars().collect(),
-            "          ###############     #       ".chars().collect(),
-            "          # 1  2        #### #        ".chars().collect(),
-            "        #####  #####      ###         ".chars().collect(),
-            "       ##  7#     3#       5#         ".chars().collect(),
-            "            # ######### #####         ".chars().collect(),
-            "            #6#       #4#             ".chars().collect(),
-            "                                      ".chars().collect(),
-            "                                      ".chars().collect(),
-        ];
-
         Self {
             stage,
             game_state,
-            maze: map,
             ..Default::default()
         }
     }
@@ -194,7 +178,7 @@ impl App {
 
     pub fn get_char_under_player(&self) -> char {
         let (r, c) = self.game_state.player;
-        self.maze[r][c]
+        self.game_state.maze[r][c]
     }
 
     pub(crate) fn execute_solution(&self) -> Result<()> {

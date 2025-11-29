@@ -8,10 +8,10 @@ use std::process::Command;
 use std::{fs::read_to_string, path::Path};
 use thiserror::Error;
 
-use crate::GameState;
 use crate::{
     DB_PATH, MIGRATION_PATH, SOLUTION_PATH,
     evaluation::evaluate_users_solution,
+    game::game_state::GameState,
     presenter::{db_created_string, instructions_string},
 };
 

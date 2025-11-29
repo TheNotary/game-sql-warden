@@ -5,11 +5,16 @@ A game that test's player's SQL knowledge.
 
 ## TODO
 
-- implement changing level
-  - when you leave the map screen, the challenge get's loaded for the number you were on
+- Do something about the panic on the map screen
 
-- when you open the map screen, cleared levels have their number replaced with an astrisk
-  - Add a global database for tracking level completion
+- Make the start screen the map screen
+
+- Document controls on the map screen
+
+- Redocument controls, including the map screen
+
+- Create a hidden level visible after all challenges are complete
+
 
 
 ## Compiling to WebAssembly (WASM)

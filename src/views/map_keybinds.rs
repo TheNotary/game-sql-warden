@@ -18,7 +18,7 @@ pub fn handle_key_event_map_view(key: event::KeyEvent, app: &mut App) -> EventRe
         _ => return EventResult::Loop,
     };
 
-    if app.maze[target.0][target.1] != '#' {
+    if app.game_state.maze[target.0][target.1] != '#' {
         app.game_state.player = target;
     }
 
