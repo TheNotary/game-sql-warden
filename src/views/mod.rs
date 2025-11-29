@@ -1,5 +1,6 @@
 pub mod challenge_keybinds;
 pub mod challenge_view;
+pub mod game_over;
 pub mod map_keybinds;
 pub mod map_view;
 pub mod no_stage_keybinds;
