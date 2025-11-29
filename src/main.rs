@@ -4,7 +4,7 @@ use crate::{
     api::{ChallengeError, Result, delete_db_file, get_game_state_from_db, setup_app_db},
     app::App,
     game::stage::Stage,
-    tui::tui_loop,
+    tui_loop::tui_loop,
 };
 
 mod api;
@@ -12,7 +12,7 @@ mod app;
 mod evaluation;
 mod game;
 mod presenter;
-mod tui;
+mod tui_loop;
 mod views;
 
 pub static DB_PATH: &str = "database.db";

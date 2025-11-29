@@ -1,7 +1,7 @@
 use crossterm::event::{self, KeyCode};
 
 use crate::app::App;
-use crate::tui::EventResult;
+use crate::tui_loop::EventResult;
 
 pub fn handle_key_no_stage(key: event::KeyEvent, app: &mut App) -> EventResult {
     match key.code {

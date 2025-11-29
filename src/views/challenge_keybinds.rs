@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 
 use crossterm::event::{self, KeyCode};
 
-use crate::tui::EventResult;
+use crate::tui_loop::EventResult;
 use crate::{
     DB_PATH, SOLUTION_PATH,
     app::{App, RightPaneMode},
