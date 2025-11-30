@@ -4,7 +4,6 @@ use std::collections::HashSet;
 use std::fmt::{self, Debug};
 use std::fs::File;
 use std::path::PathBuf;
-use std::process::Command;
 use std::{fs::read_to_string, path::Path};
 use thiserror::Error;
 
@@ -141,31 +140,40 @@ pub fn read_challenge_name(name_path: &str) -> String {
     read_to_string(name_path).expect(&format!("Unable to read {name_path}."))
 }
 
-// FIXME: When is this used? it depends on the sqlite3 command...
 fn migrate_challenge_db(base_dir: &str) -> Result<()> {
     debug!("migrate_challenge_db was called with base_dir: {base_dir}");
 
-    let migration_path = format!("{base_dir}/{MIGRATION_PATH}");
-    if !Path::new(&migration_path).exists() {
-        error!("MigrationFileMissing!: {migration_path}");
+    let migration_path_str = format!("{base_dir}/{MIGRATION_PATH}");
+    if !Path::new(&migration_path_str).exists() {
+        error!("MigrationFileMissing!: {migration_path_str}");
         return Err(ChallengeError::MigrationFileMissing(
-            migration_path.to_string(),
+            migration_path_str.to_string(),
         ));
     }
 
-    let status = Command::new("sqlite3")
-        .arg(format!("{base_dir}/{DB_PATH}"))
-        .arg(format!(".read {}", migration_path))
-        .status()?;
+    let db_path = format!("{base_dir}/{DB_PATH}");
+    execute_batch_sql_file(&migration_path_str, &db_path)
+}
 
-    debug!("sql3 command complete... wait this is left-over AI slop...");
+/// A helper function for executing a sql file against a db given paths to both.
+///
+/// # Panics
+/// Probably
+fn execute_batch_sql_file(path_to_sql: &str, path_to_db: &str) -> Result<()> {
+    debug!("execute_batch_sql_file for {path_to_sql} against db at {path_to_db}");
+    let sql_path = Path::new(path_to_sql);
+    let sql_cmd = read_to_string(sql_path)?;
 
-    if !status.success() {
-        error!("MigrationFailed!");
-        return Err(ChallengeError::MigrationFailed);
+    let conn = Connection::open(path_to_db).unwrap();
+    let status = conn.execute_batch(&sql_cmd);
+
+    match status {
+        Ok(_) => Ok(()),
+        Err(_) => {
+            error!("MigrationFailed");
+            return Err(ChallengeError::MigrationFailed);
+        }
     }
-
-    Ok(())
 }
 
 fn was_challenge_attempted(conn: &Connection) -> Result<bool> {
@@ -178,17 +186,14 @@ fn was_challenge_attempted(conn: &Connection) -> Result<bool> {
 }
 
 pub fn setup_app_db() -> Result<()> {
+    debug!("setup_app_db was called");
     if Path::new(DB_PATH).exists() {
+        debug!("App db path already exists, skipping migration for {DB_PATH}");
         return Ok(());
     }
 
-    let migration_path = PathBuf::from("sql/migrate.sql");
-    let sql_cmd = read_to_string(migration_path)?;
-
-    let conn = Connection::open(DB_PATH).unwrap();
-    conn.execute_batch(&sql_cmd).unwrap();
-    drop(conn);
-    Ok(())
+    let sql_cmd = read_to_string(PathBuf::from("sql/migrate.sql"))?;
+    execute_batch_sql_file(&sql_cmd, DB_PATH)
 }
 
 pub fn get_game_state_from_db() -> Result<GameState> {
@@ -251,15 +256,9 @@ pub fn execute_solution(base_dir: &str) -> Result<()> {
         return Ok(());
     }
 
-    let solution_path = PathBuf::from(&format!("{base_dir}/{SOLUTION_PATH}"));
-    let solution_cmd = read_to_string(solution_path)?;
+    let solution_path_str = format!("{base_dir}/{SOLUTION_PATH}");
 
-    let conn = Connection::open(db_path).unwrap();
-    conn.execute_batch(&solution_cmd)?;
-    // let mut stmt = conn.prepare(&solution_cmd)?;
-    // stmt.raw_execute()?;
-
-    Ok(())
+    execute_batch_sql_file(&solution_path_str, &db_path)
 }
 
 #[cfg(test)]

@@ -5,7 +5,11 @@ A game that test's player's SQL knowledge.
 
 ## TODO
 
-- Do something about the panic on the map screen
+x Do something about the panic on the map screen
+
+- app.assess_db() will throw a panic if the user's SQL solution is incorrect........... wuuuuuuu!!!!!TTTTT
+
+- Capture the output from the test so the user has more feedback about what's is tested and what's wrong?
 
 - Make the start screen the map screen
 

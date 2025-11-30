@@ -32,9 +32,6 @@ Create a VIEW named **solution** that returns:
 - Their **rank within their department**, ordered by salary (highest salary gets rank 1)
 
 Your VIEW must:
-- Use **window functions**
-- Use **partitioning**
-- Use **ranking**, either `RANK()` or `DENSE_RANK()`
 - Correctly count projects even if an employee has zero
 - Group/aggregate without losing the ability to window-rank employees
 
