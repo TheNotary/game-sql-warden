@@ -7,7 +7,17 @@ A game that test's player's SQL knowledge.
 
 x Do something about the panic on the map screen
 
-- app.assess_db() will throw a panic if the user's SQL solution is incorrect........... wuuuuuuu!!!!!TTTTT
+- main menu should include:
+  - Start (Light Mode)
+  - Continue (Dark Mode)
+  - Reset all data
+
+- Opening Screen
+  - 
+
+- app.assess_db() will throw a panic if the user's SQL solution is incorrect........... wuuuuuuu!!!!!TTTTT?????
+
+- It would be cool to see the user's SQL solution updating in real time, in the bottom pane, as they type it... need a vim and nano mode though, and syntax highlighting, and column allign?
 
 - Capture the output from the test so the user has more feedback about what's is tested and what's wrong?
 

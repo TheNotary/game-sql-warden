@@ -156,6 +156,7 @@ fn get_path(n: u32) -> Option<String> {
 #[derive(Default, Clone, Copy)]
 pub enum View {
     #[default]
+    TitleScreen,
     ChallengeScreen,
     MapScreen,
     NoStage,

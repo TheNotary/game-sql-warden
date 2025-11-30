@@ -2,12 +2,16 @@ use std::sync::mpsc::{Receiver, RecvTimeoutError, channel};
 use std::time::Duration;
 
 use crossterm::event::{self, Event, poll};
+use log::info;
 use notify::{EventKind, FsEventWatcher, RecursiveMode, Watcher};
 use ratatui::Frame;
+use ratatui::widgets::ListState;
 
 use crate::app::View;
 use crate::views::no_stage_keybinds::handle_key_no_stage;
 use crate::views::no_stage_view::draw_no_stage_view;
+use crate::views::title_keybinds::handle_key_title_screen;
+use crate::views::title_view::draw_title_view;
 use crate::{
     SOLUTION_PATH,
     api::Result,
@@ -27,14 +31,16 @@ pub enum EventResult {
 pub fn tui_loop(app: &mut App) -> Result<()> {
     let mut terminal = ratatui::init();
     let (_watcher, rx) = setup_file_watcher(&app.stage.base_dir).expect("COMPUTER!");
+    let mut title_state = ListState::default();
+    title_state.select(Some(0));
 
     loop {
-        terminal.draw(|frame| draw_logic(frame, app))?;
+        terminal.draw(|frame| draw_logic(frame, app, &mut title_state))?;
 
         // every 50ms, check for inputs from user
         if poll(Duration::from_millis(50))? {
             if let Event::Key(key) = event::read()? {
-                match handle_key_event(key, app) {
+                match handle_key_event(key, app, &mut title_state) {
                     EventResult::Quit => break,
                     EventResult::Loop => continue,
                     EventResult::ReloadTerminal => terminal = ratatui::init(),
@@ -56,6 +62,7 @@ pub fn tui_loop(app: &mut App) -> Result<()> {
     }
 
     ratatui::restore();
+    info!("## Program exited gracefully");
 
     Ok(())
 }
@@ -70,18 +77,24 @@ fn setup_file_watcher(
     Ok((watcher, rx))
 }
 
-fn handle_key_event(key: event::KeyEvent, app: &mut App) -> EventResult {
+fn handle_key_event(
+    key: event::KeyEvent,
+    app: &mut App,
+    title_state: &mut ListState,
+) -> EventResult {
     match app.current_view {
         View::ChallengeScreen => handle_key_event_challenge_view(key, app),
         View::MapScreen => handle_key_event_map_view(key, app),
         View::NoStage => handle_key_no_stage(key, app),
+        View::TitleScreen => handle_key_title_screen(key, app, title_state),
     }
 }
 
-fn draw_logic(frame: &mut Frame, app: &mut App) {
+fn draw_logic(frame: &mut Frame, app: &mut App, title_state: &mut ListState) {
     match app.current_view {
         View::ChallengeScreen => draw_challenge_view(frame, app),
         View::MapScreen => draw_map_view(frame, app),
         View::NoStage => draw_no_stage_view(frame, app),
+        View::TitleScreen => draw_title_view(frame, title_state),
     }
 }

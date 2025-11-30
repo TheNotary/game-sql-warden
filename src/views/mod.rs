@@ -5,3 +5,5 @@ pub mod map_keybinds;
 pub mod map_view;
 pub mod no_stage_keybinds;
 pub mod no_stage_view;
+pub mod title_keybinds;
+pub mod title_view;
