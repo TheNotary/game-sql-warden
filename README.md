@@ -8,8 +8,8 @@ A game that test's player's SQL knowledge.
 x Do something about the panic on the map screen
 
 - main menu should include:
-  - Start (Light Mode)
-  - Continue (Dark Mode)
+  x Start (Light Mode)
+  x Continue (Dark Mode)
   - Reset all data
 
 - Opening Screen

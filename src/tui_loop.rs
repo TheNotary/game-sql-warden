@@ -10,6 +10,7 @@ use ratatui::widgets::ListState;
 use crate::app::View;
 use crate::views::no_stage_keybinds::handle_key_no_stage;
 use crate::views::no_stage_view::draw_no_stage_view;
+use crate::views::popup_keybinds::handle_key_popup;
 use crate::views::title_keybinds::handle_key_title_screen;
 use crate::views::title_view::draw_title_view;
 use crate::{
@@ -82,11 +83,15 @@ fn handle_key_event(
     app: &mut App,
     title_state: &mut ListState,
 ) -> EventResult {
-    match app.current_view {
-        View::ChallengeScreen => handle_key_event_challenge_view(key, app),
-        View::MapScreen => handle_key_event_map_view(key, app),
-        View::NoStage => handle_key_no_stage(key, app),
-        View::TitleScreen => handle_key_title_screen(key, app, title_state),
+    if app.show_popup {
+        handle_key_popup(key, app)
+    } else {
+        match app.current_view {
+            View::ChallengeScreen => handle_key_event_challenge_view(key, app),
+            View::MapScreen => handle_key_event_map_view(key, app),
+            View::NoStage => handle_key_no_stage(key, app),
+            View::TitleScreen => handle_key_title_screen(key, app, title_state),
+        }
     }
 }
 
@@ -95,6 +100,6 @@ fn draw_logic(frame: &mut Frame, app: &mut App, title_state: &mut ListState) {
         View::ChallengeScreen => draw_challenge_view(frame, app),
         View::MapScreen => draw_map_view(frame, app),
         View::NoStage => draw_no_stage_view(frame, app),
-        View::TitleScreen => draw_title_view(frame, title_state),
+        View::TitleScreen => draw_title_view(frame, app, title_state),
     }
 }

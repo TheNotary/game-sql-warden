@@ -1,6 +1,7 @@
 use crossterm::event::{self, KeyCode};
 use ratatui::widgets::ListState;
 
+use crate::api::{reset_databases, reset_solutions};
 use crate::app::App;
 use crate::tui_loop::EventResult;
 
@@ -25,7 +26,17 @@ pub fn handle_key_title_screen(
             match title_state.selected() {
                 Some(0) => app.cycle_view_to_map(),
                 Some(1) => app.cycle_view_to_map(),
-                Some(2) => todo!(),
+                Some(2) => {
+                    app.set_popup(
+                        "Are you sure you want to delete every solution stored as well as each database? [y/n]",
+                        Box::new(|app: &mut App| {
+                            reset_databases();
+                            reset_solutions();
+                            app.cycle_view_to_map();
+                            todo!("make it so the app database is recreated, and re-init the struct")
+                        }),
+                    );
+                }
                 _ => {}
             }
 

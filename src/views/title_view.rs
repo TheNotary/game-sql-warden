@@ -1,9 +1,11 @@
 use ratatui::Frame;
-use ratatui::layout::{Constraint, Layout};
+use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
-use ratatui::widgets::{Block, List, ListState, Paragraph, Wrap};
+use ratatui::widgets::{Block, Clear, List, ListState, Paragraph, Wrap};
 
-pub fn draw_title_view(frame: &mut Frame<'_>, title_state: &mut ListState) {
+use crate::app::App;
+
+pub fn draw_title_view(frame: &mut Frame<'_>, app: &mut App, title_state: &mut ListState) {
     use Constraint::{Length, Min};
     let vertical = Layout::vertical([Length(3), Min(0), Length(4)]);
 
@@ -38,4 +40,25 @@ pub fn draw_title_view(frame: &mut Frame<'_>, title_state: &mut ListState) {
         .repeat_highlight_symbol(true);
 
     frame.render_stateful_widget(list, main_area, title_state);
+
+    if app.show_popup {
+        let popup_area = popup_area(main_area, 60, 20);
+
+        let popup_text = Paragraph::new(app.popup_text.clone())
+            .block(Block::bordered())
+            .centered()
+            .bg(Color::Gray)
+            .wrap(Wrap { trim: true });
+
+        frame.render_widget(Clear, popup_area);
+        frame.render_widget(popup_text, popup_area);
+    }
+}
+
+fn popup_area(area: Rect, percent_x: u16, percent_y: u16) -> Rect {
+    let vertical = Layout::vertical([Constraint::Percentage(percent_y)]).flex(Flex::Center);
+    let horizontal = Layout::horizontal([Constraint::Percentage(percent_x)]).flex(Flex::Center);
+    let [area] = vertical.areas(area);
+    let [area] = horizontal.areas(area);
+    area
 }

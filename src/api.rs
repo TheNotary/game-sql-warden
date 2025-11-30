@@ -1,7 +1,9 @@
+use glob::glob;
 use log::{debug, error, trace};
 use rusqlite::{Connection, OptionalExtension};
 use std::collections::HashSet;
 use std::fmt::{self, Debug};
+use std::fs;
 use std::fs::File;
 use std::path::PathBuf;
 use std::{fs::read_to_string, path::Path};
@@ -138,6 +140,43 @@ pub fn read_lore_file(lore_path: &str) -> String {
 
 pub fn read_challenge_name(name_path: &str) -> String {
     read_to_string(name_path).expect(&format!("Unable to read {name_path}."))
+}
+
+/// Remove ./database.db and ./challenges/**/database.db
+pub fn reset_databases() {
+    remove_if_exists("./database.db");
+
+    for entry in glob("./challenges/**/database.db").expect("Invalid glob pattern") {
+        match entry {
+            Ok(path) => remove_if_exists(path.to_string_lossy().as_ref()),
+            Err(e) => debug!("Glob error: {:?}", e),
+        }
+    }
+}
+
+/// Remove ./challenges/**/solution.sql
+pub fn reset_solutions() {
+    for entry in glob("./challenges/**/solution.sql").expect("Invalid glob pattern") {
+        match entry {
+            Ok(path) => remove_if_exists(path.to_string_lossy().as_ref()),
+            Err(e) => debug!("Glob error: {:?}", e),
+        }
+    }
+}
+
+/// Removes a file if it exists, if it doesn't exist, just complains
+/// # Panics
+/// On permission issues and whatever else fs::remove_file might error on
+fn remove_if_exists(path: &str) {
+    match fs::remove_file(path) {
+        Ok(_) => {}
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            debug!("File was missing, skipping delete of {}", path);
+        }
+        Err(e) => {
+            panic!("Failed to delete {}: {:?}", path, e);
+        }
+    }
 }
 
 fn migrate_challenge_db(base_dir: &str) -> Result<()> {

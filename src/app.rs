@@ -21,6 +21,9 @@ pub struct App {
     pub left_pane_mode: LeftPaneMode,
     pub right_pane_mode: RightPaneMode,
     pub current_view: View,
+    pub show_popup: bool,
+    pub popup_text: String,
+    pub confirmation_task: Option<Box<dyn FnMut(&mut App)>>,
 }
 
 impl App {
@@ -132,6 +135,12 @@ impl App {
         let base_dir = &self.stage.base_dir;
         execute_solution(base_dir)?;
         Ok(())
+    }
+
+    pub(crate) fn set_popup(&mut self, msg: &str, confirmation_task: Box<dyn FnMut(&mut App)>) {
+        self.show_popup = true;
+        self.popup_text = msg.to_string();
+        self.confirmation_task = Some(confirmation_task);
     }
 }
 
