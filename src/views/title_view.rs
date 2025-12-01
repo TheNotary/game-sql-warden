@@ -49,6 +49,7 @@ pub fn draw_title_view(frame: &mut Frame<'_>, app: &mut App, title_state: &mut L
         format!("{verb} Game (Dark Mode)"),
         format!("Reset Database(s)"),
         format!("About"),
+        format!("Credits"),
         format!("Quit"),
     ];
 

@@ -39,11 +39,15 @@ pub fn handle_key_title_screen(
                 }
                 Some(3) => {
                     app.set_popup(
-                        "I lack the freetime to build an about page. Please press y to accept my sincere apology. \n\n[y]",
+                        "I lack the freetime to build an about page. Please press y to accept my sincere apology. \n\n[y/y]",
                         Box::new(|_app: &mut App| {}),
-                    );
+                    )
                 }
-                Some(4) => return EventResult::Quit,
+                Some(4) => app.set_popup(
+                    "The sick chiptune 'doopam CAIRO 90s' is from Sysfins / Sking32 / Mody Music \n\n [y/n]",
+                    Box::new(|_app: &mut App| {}),
+                ),
+                Some(5) => return EventResult::Quit,
                 _ => {}
             }
 
