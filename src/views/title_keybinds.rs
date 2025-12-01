@@ -28,7 +28,7 @@ pub fn handle_key_title_screen(
                 Some(1) => app.cycle_view_to_map(),
                 Some(2) => {
                     app.set_popup(
-                        "Are you sure you want to delete every solution stored as well as each database? [y/n]",
+                        "Are you sure you want to delete every solution stored as well as each database? \n\n[y/n]",
                         Box::new(|app: &mut App| {
                             reset_databases();
                             reset_solutions();
@@ -37,6 +37,13 @@ pub fn handle_key_title_screen(
                         }),
                     );
                 }
+                Some(3) => {
+                    app.set_popup(
+                        "I lack the freetime to build an about page. Please press y to accept my sincere apology. \n\n[y]",
+                        Box::new(|_app: &mut App| {}),
+                    );
+                }
+                Some(4) => return EventResult::Quit,
                 _ => {}
             }
 
