@@ -7,16 +7,33 @@ use crate::app::App;
 
 pub fn draw_title_view(frame: &mut Frame<'_>, app: &mut App, title_state: &mut ListState) {
     use Constraint::{Length, Min};
-    let vertical = Layout::vertical([Length(3), Min(0), Length(4)]);
+    let vertical = Layout::vertical([Length(3), Length(8), Min(0), Length(4)]);
 
-    let [title_area, main_area, _legend_area] = vertical.areas(frame.area());
+    let [title_area, logo_section, main_area, _legend_area] = vertical.areas(frame.area());
+
+    let horizontal = Layout::horizontal([Min(0), Length(48), Min(0)]);
+
+    let [_, logo_area, _] = horizontal.areas(logo_section);
 
     let title_text = Paragraph::new("SQL Warden".to_string())
         .block(Block::bordered())
         .centered()
-        .bg(Color::Gray)
         .wrap(Wrap { trim: true });
     frame.render_widget(title_text, title_area);
+
+    let logo = "
+╭━━━┳━━━┳╮╱╱╱╱╱╭╮╱╱╱╱╱╭╮╱╱╱╱╱╱╱╱╱╱╱╭╮╭╮   ╭━━━━╮
+┃╭━╮┃╭━╮┃┃╱╱╱╱╱┃┃╱╱╱╱╱┃┃╱╱╱╱╱╱╱╱╱╱╭╯╰┫┃   ╰━┫┣━╯
+┃╰━━┫┃╱┃┃┃╱╱╱╱╱┃┃╱╱╭━━┫╰━┳╮╱╭┳━┳┳━╋╮╭┫╰━╮   ┃┃
+╰━━╮┃┃╱┃┃┃╱╭╮╱╱┃┃╱╭┫╭╮┃╭╮┃┃╱┃┃╭╋┫╭╮┫┃┃╭╮┃   ┃┃
+┃╰━╯┃╰━╯┃╰━╯┃╱╱┃╰━╯┃╭╮┃╰╯┃╰━╯┃┃┃┃┃┃┃╰┫┃┃┃   ┃┃
+╰━━━┻━━╮┣━━━╯╱╱╰━━━┻╯╰┻━━┻━╮╭┻╯╰┻╯╰┻━┻╯╰╯ ╭━┫┣━╮
+╱╱╱╱╱╱╱╰╯╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╭━╯┃             ╰━━━━╯
+╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╱╰━━╯ Powered by Ratatui"
+        .trim();
+
+    let logo_text = Paragraph::new(logo.to_string());
+    frame.render_widget(logo_text, logo_area);
 
     // let main_text = Paragraph::new("Main Area".to_string())
     //     .block(Block::bordered())
