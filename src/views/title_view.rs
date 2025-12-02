@@ -3,6 +3,7 @@ use ratatui::layout::{Constraint, Flex, Layout, Rect};
 use ratatui::style::{Color, Style, Stylize};
 use ratatui::widgets::{Block, Clear, List, ListState, Paragraph, Wrap};
 
+use crate::GAME_TITLE;
 use crate::app::App;
 
 pub fn draw_title_view(frame: &mut Frame<'_>, app: &mut App, title_state: &mut ListState) {
@@ -15,7 +16,7 @@ pub fn draw_title_view(frame: &mut Frame<'_>, app: &mut App, title_state: &mut L
 
     let [_, logo_area, _] = horizontal.areas(logo_section);
 
-    let title_text = Paragraph::new("SQL Warden".to_string())
+    let title_text = Paragraph::new(GAME_TITLE.to_string())
         .block(Block::bordered())
         .centered()
         .wrap(Wrap { trim: true });
@@ -45,8 +46,8 @@ pub fn draw_title_view(frame: &mut Frame<'_>, app: &mut App, title_state: &mut L
     let verb = "Start";
 
     let items = [
-        format!("{verb} Game (Light Mode)"),
-        format!("{verb} Game (Dark Mode)"),
+        format!("{verb} Game"),
+        format!("Seed"),
         format!("Reset Database(s)"),
         format!("About"),
         format!("Credits"),
@@ -54,7 +55,7 @@ pub fn draw_title_view(frame: &mut Frame<'_>, app: &mut App, title_state: &mut L
     ];
 
     let list = List::new(items)
-        .block(Block::bordered().title("List"))
+        .block(Block::bordered().title("Main Menu"))
         .highlight_style(Style::new().italic())
         .highlight_symbol("-> ")
         .repeat_highlight_symbol(true);

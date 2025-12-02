@@ -1,4 +1,4 @@
-# SQL Warden
+# SQL Labyrinth
 
 A game that test's player's SQL knowledge.
 
@@ -13,7 +13,7 @@ x Do something about the panic on the map screen
   - Reset all data
 
 - Opening Screen
-  - 
+  -
 
 - app.assess_db() will throw a panic if the user's SQL solution is incorrect........... wuuuuuuu!!!!!TTTTT?????
 

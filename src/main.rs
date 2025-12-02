@@ -17,6 +17,7 @@ mod presenter;
 mod tui_loop;
 mod views;
 
+pub static GAME_TITLE: &str = "SQL Labyrinth";
 pub static DB_PATH: &str = "database.db";
 pub static NAME_PATH: &str = "00_name.txt";
 pub static LORE_PATH: &str = "01_lore.md";
@@ -26,7 +27,7 @@ pub static TEST_SQL_PATH: &str = "04_test.sql";
 pub static SOLUTION_PATH: &str = "solution.sql";
 
 fn main() -> Result<()> {
-    play_chip();
+    let _ = play_chip();
     setup_logger()?;
 
     let base_dir = "challenges/01_strongest_cubical";
