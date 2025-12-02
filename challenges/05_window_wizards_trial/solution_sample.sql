@@ -13,7 +13,7 @@ SELECT employees.employee_name
             THEN 0
         ELSE project_count.total_projects
         END AS total_projects
-    , RANK() OVER (PARTITION BY employees.department ORDER BY employees.salary DESC) AS department_rank
+    , DENSE_RANK() OVER (PARTITION BY employees.department ORDER BY employees.salary DESC) AS department_rank
 FROM employees
 LEFT JOIN project_count
     ON employees.id = project_count.employee_id;

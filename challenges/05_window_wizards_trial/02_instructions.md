@@ -30,6 +30,8 @@ Create a VIEW named **solution** that returns:
 - Their **salary**
 - The **number of projects** they have worked on
 - Their **rank within their department**, ordered by salary (highest salary gets rank 1)
+- If two employees have the same number of projects, they should have the same rank.
+- Do not skip any numbers when ranking.
 
 Your VIEW must:
 - Correctly count projects even if an employee has zero
