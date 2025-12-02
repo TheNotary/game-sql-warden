@@ -3,12 +3,14 @@ use log::info;
 use crate::{
     api::{ChallengeError, Result, delete_db_file, get_game_state_from_db, setup_app_db},
     app::App,
+    chip_tuner::play_chip,
     game::stage::Stage,
     tui_loop::tui_loop,
 };
 
 mod api;
 mod app;
+mod chip_tuner;
 mod evaluation;
 mod game;
 mod presenter;
@@ -24,6 +26,7 @@ pub static TEST_SQL_PATH: &str = "04_test.sql";
 pub static SOLUTION_PATH: &str = "solution.sql";
 
 fn main() -> Result<()> {
+    play_chip();
     setup_logger()?;
 
     let base_dir = "challenges/01_strongest_cubical";
