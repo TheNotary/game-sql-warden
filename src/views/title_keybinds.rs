@@ -4,6 +4,7 @@ use ratatui::widgets::ListState;
 use crate::api::{reset_databases, reset_solutions};
 use crate::app::App;
 use crate::tui_loop::EventResult;
+use crate::views::title_view::MenuItem;
 
 pub fn handle_key_title_screen(
     key: event::KeyEvent,
@@ -23,10 +24,9 @@ pub fn handle_key_title_screen(
         KeyCode::Char('l') | KeyCode::Enter => {
             // Check choice from title_state
             // And implement deleting all the databases I guess
-            match title_state.selected() {
-                Some(0) => app.cycle_view_to_map(),
-                Some(1) => app.cycle_view_to_map(),
-                Some(2) => {
+            match MenuItem::get_choice(title_state) {
+                MenuItem::Play => app.cycle_view_to_map(),
+                MenuItem::ResetDatabases => {
                     app.set_popup(
                         "Are you sure you want to delete every solution stored as well as each database? \n\n[y/n]",
                         Box::new(|app: &mut App| {
@@ -37,18 +37,12 @@ pub fn handle_key_title_screen(
                         }),
                     );
                 }
-                Some(3) => {
-                    app.set_popup(
-                        "I lack the freetime to build an about page. Please press y to accept my sincere apology. \n\n[y/y]",
-                        Box::new(|_app: &mut App| {}),
-                    )
-                }
-                Some(4) => app.set_popup(
+                MenuItem::Credits => app.set_popup(
                     "The sick chiptune 'doopam CAIRO 90s' is from Sysfins / Sking32 / Mody Music \n\n [y/n]",
                     Box::new(|_app: &mut App| {}),
                 ),
-                Some(5) => return EventResult::Quit,
-                _ => {}
+                MenuItem::Quit => return EventResult::Quit,
+                MenuItem::None => {}
             }
 
             EventResult::Loop

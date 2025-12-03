@@ -36,23 +36,10 @@ pub fn draw_title_view(frame: &mut Frame<'_>, app: &mut App, title_state: &mut L
     let logo_text = Paragraph::new(logo.to_string());
     frame.render_widget(logo_text, logo_area);
 
-    // let main_text = Paragraph::new("Main Area".to_string())
-    //     .block(Block::bordered())
-    //     .centered()
-    //     .bg(Color::Gray)
-    //     .wrap(Wrap { trim: true });
-    // frame.render_widget(main_text, main_area);
-
-    let verb = "Start";
-
-    let items = [
-        format!("{verb} Game"),
-        format!("Seed"),
-        format!("Reset Database(s)"),
-        format!("About"),
-        format!("Credits"),
-        format!("Quit"),
-    ];
+    let items: Vec<String> = MenuItem::all()
+        .iter()
+        .map(|m| m.label().to_string())
+        .collect();
 
     let list = List::new(items)
         .block(Block::bordered().title("Main Menu"))
@@ -82,4 +69,42 @@ fn popup_area(area: Rect, percent_x: u16, percent_y: u16) -> Rect {
     let [area] = vertical.areas(area);
     let [area] = horizontal.areas(area);
     area
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum MenuItem {
+    Play,
+    ResetDatabases,
+    Credits,
+    Quit,
+    None,
+}
+
+impl MenuItem {
+    pub fn label(&self) -> &'static str {
+        match self {
+            MenuItem::Play => "Play Game",
+            MenuItem::ResetDatabases => "Reset Database(s)",
+            MenuItem::Credits => "Credits",
+            MenuItem::Quit => "Quit",
+            MenuItem::None => "",
+        }
+    }
+
+    pub fn all() -> &'static [MenuItem] {
+        &[
+            MenuItem::Play,
+            MenuItem::ResetDatabases,
+            MenuItem::Credits,
+            MenuItem::Quit,
+        ]
+    }
+
+    pub fn get_choice(title_state: &mut ListState) -> MenuItem {
+        if let Some(idx) = title_state.selected() {
+            Self::all()[idx]
+        } else {
+            MenuItem::None
+        }
+    }
 }
