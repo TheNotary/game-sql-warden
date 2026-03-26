@@ -1,3 +1,4 @@
+use log::debug;
 use openmpt::module::Module;
 use rodio::{OutputStreamBuilder, Sink};
 use std::fs;
@@ -75,6 +76,8 @@ impl ModulePlayer {
 }
 
 pub fn play_chip() -> Result<(), Box<dyn std::error::Error>> {
+    debug!("play_chip was called");
+
     let file_path_str = "music/glitch13-8bit.it";
     let file_path = Path::new(file_path_str);
 

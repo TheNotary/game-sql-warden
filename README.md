@@ -2,6 +2,13 @@
 
 A game that test's player's SQL knowledge.
 
+## Usage
+
+```
+cargo install --path .
+sql-warden
+```
+
 
 ## TODO
 
@@ -93,3 +100,4 @@ The compiled WASM binary will be available at:
 target/wasm32-wasip2/release/sql-warden.wasm
 ```
 
+TODO: copy rust-gpt-4.1-best-mode.agent.md into .agents, copilot should just pick that up :D

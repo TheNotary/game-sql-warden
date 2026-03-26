@@ -226,6 +226,7 @@ fn was_challenge_attempted(conn: &Connection) -> Result<bool> {
 
 pub fn setup_app_db() -> Result<()> {
     debug!("setup_app_db was called");
+    debug!("DB_PATH: {}", DB_PATH);
     if Path::new(DB_PATH).exists() {
         debug!("App db path already exists, skipping migration for {DB_PATH}");
         return Ok(());

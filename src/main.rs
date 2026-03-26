@@ -27,8 +27,8 @@ pub static TEST_SQL_PATH: &str = "04_test.sql";
 pub static SOLUTION_PATH: &str = "solution.sql";
 
 fn main() -> Result<()> {
-    let _ = play_chip();
     setup_logger()?;
+    let _ = play_chip();
 
     let base_dir = "challenges/01_strongest_cubical";
     match run_program(base_dir) {
