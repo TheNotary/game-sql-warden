@@ -232,8 +232,8 @@ pub fn setup_app_db() -> Result<()> {
         return Ok(());
     }
 
-    let sql_cmd = read_to_string(PathBuf::from("sql/migrate.sql"))?;
-    execute_batch_sql_file(&sql_cmd, DB_PATH)
+    let sql_cmd = "sql/migrate.sql";
+    execute_batch_sql_file(sql_cmd, DB_PATH)
 }
 
 pub fn get_game_state_from_db() -> Result<GameState> {
